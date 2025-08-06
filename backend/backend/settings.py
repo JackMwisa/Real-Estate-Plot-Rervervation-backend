@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'Django.contrib.gis',  # GIS support
+    
+    # my apps
+    'listings',
+    
+    
 ]
 
 MIDDLEWARE = [
