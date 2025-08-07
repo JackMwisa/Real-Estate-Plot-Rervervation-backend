@@ -57,7 +57,7 @@ class Listing(models.Model):  # Fixed typo: modles -> models
     date_available = models.DateField(null=True, blank=True)
     agent_name = models.CharField(max_length=100, blank=True, null=True)
     agent_phone = models.CharField(max_length=15, blank=True, null=True)
-    date_posted = models.DateField(auto_now_add=True, default=timezone.now)
+    date_posted = models.DateField(auto_now_add=True)
     
     # Use one of the two below depending on whether GDAL works
     latitude = models.FloatField(null=True, blank=True)
