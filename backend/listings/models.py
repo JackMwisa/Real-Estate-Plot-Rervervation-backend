@@ -2,6 +2,10 @@ from django.db import models
 from django.utils import timezone
 # from django.contrib.gis.db import models as gis_models  # Uncomment if GDAL works
 
+
+
+
+
 class Listing(models.Model):  # Fixed typo: modles -> models
 
     AREA_CHOICES = [
