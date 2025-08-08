@@ -39,6 +39,7 @@ urlpatterns = [
 
     path('api-auth-djoser/', include('djoser.urls')),
     path('api-auth-djoser/', include('djoser.urls.authtoken')),
+    path('api/payments/', include('payments.api_urls')),
 
 
 

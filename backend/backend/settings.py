@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     # your apps
     "listings",
     "users",
+    "payments",
 ]
 
 MIDDLEWARE = [
