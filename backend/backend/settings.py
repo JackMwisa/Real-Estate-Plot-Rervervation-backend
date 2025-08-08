@@ -39,11 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     'rest_framework',
-    'django.contrib.gis',
-    'rest_framework_gis',
     'corsheaders',
     'djoser',
-    'rest_framework.authtoken',
     'storages',
     
     
