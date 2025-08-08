@@ -1,4 +1,6 @@
 from django.db import models
+from django.conf import settings
+from django.contrib.auth import get_user_model
 
 class Listing(models.Model):
     AREA_CHOICES = [
@@ -60,9 +62,8 @@ class Listing(models.Model):
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
 
-    # Optional: foreign key to seller if you have a User model relation
-    # from django.contrib.auth import get_user_model
-    # seller = models.ForeignKey(get_user_model(), null=True, blank=True, on_delete=models.SET_NULL, related_name="listings")
+
+    seller = models.ForeignKey(get_user_model(), null=True, blank=True, on_delete=models.SET_NULL, related_name="listings")
 
     def __str__(self):
         return self.title

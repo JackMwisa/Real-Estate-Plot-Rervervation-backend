@@ -1,9 +1,9 @@
 from rest_framework import generics
-from .models import Listing
-from .serializers import ListingSerializer
+from listings.models import Listing
+from listings.api.serializers import ListingSerializer
 
 class ListingList(generics.ListAPIView):
-    queryset = Listing.objects.all().order_by('-date_posted')
+    queryset = Listing.objects.all().order_by("-date_posted").select_related("seller", "seller__profile")
     serializer_class = ListingSerializer
 
 class ListingCreate(generics.CreateAPIView):
@@ -11,7 +11,7 @@ class ListingCreate(generics.CreateAPIView):
     serializer_class = ListingSerializer
 
 class ListingDetail(generics.RetrieveAPIView):
-    queryset = Listing.objects.all()
+    queryset = Listing.objects.all().select_related("seller", "seller__profile")
     serializer_class = ListingSerializer
 
 class ListingDelete(generics.DestroyAPIView):

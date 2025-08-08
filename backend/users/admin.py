@@ -5,16 +5,11 @@ from .models import Profile
 
 User = get_user_model()
 
-# Unregister and register custom User model
-try:
-    admin.site.unregister(User)
-except admin.sites.NotRegistered:
-    pass
-
 @admin.register(User)
-class CustomUserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin):
     pass
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ['seller', 'agency_name', 'phone_number']
+    list_display = ["seller", "agency_name", "phone_number"]
+    search_fields = ["seller__username", "agency_name", "phone_number"]
