@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "rest_framework",
+    "rest_framework.authtoken",
     "corsheaders",
     "djoser",
     "storages",
@@ -105,7 +106,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-DJOSER = {
+DJOSER = {     
     "USER_CREATE_PASSWORD_RETYPE": True,
     "SEND_ACTIVATION_EMAIL": False,
 }
