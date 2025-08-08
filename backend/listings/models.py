@@ -61,6 +61,19 @@ class Listing(models.Model):
     # Simple latitude/longitude storage (no GeoDjango)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
+    
+    image_main = models.ImageField(
+        upload_to="listing_images/%Y/%m/%d/", null=True, blank=True
+    )
+    image_2 = models.ImageField(
+        upload_to="listing_images/%Y/%m/%d/", null=True, blank=True
+    )
+    image_3 = models.ImageField(
+        upload_to="listing_images/%Y/%m/%d/", null=True, blank=True
+    )
+    image_4 = models.ImageField(
+        upload_to="listing_images/%Y/%m/%d/", null=True, blank=True
+    )
 
 
     seller = models.ForeignKey(get_user_model(), null=True, blank=True, on_delete=models.SET_NULL, related_name="listings")

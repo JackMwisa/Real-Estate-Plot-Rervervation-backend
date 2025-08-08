@@ -16,10 +16,19 @@ def spherical_distance_km(lat1, lon1, lat2, lon2):
     return R * acos(val)
 
 class ListingSerializer(serializers.ModelSerializer):
+    
     country = serializers.SerializerMethodField()
     seller_username = serializers.SerializerMethodField()
     seller_agency_name = serializers.SerializerMethodField()
     listing_pois_within_10km = serializers.SerializerMethodField()
+    image_main_url = serializers.SerializerMethodField()
+    
+    
+    def get_image_main_url(self, obj):
+        req = self.context.get("request")
+        if obj.image_main and hasattr(obj.image_main, "url"):
+            return req.build_absolute_uri(obj.image_main.url) if req else obj.image_main.url
+        return None
 
     def get_listing_pois_within_10km(self, obj):
         if obj.latitude is None or obj.longitude is None:
