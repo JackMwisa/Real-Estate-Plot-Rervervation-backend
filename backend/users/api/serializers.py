@@ -4,9 +4,11 @@ from listings.models import Listing
 from listings.api.serializers import ListingSerializer  # note the api path
 
 class ProfileSerializer(serializers.ModelSerializer):
-    seller_username = serializers.SerializerMethodField()
-    seller_email = serializers.SerializerMethodField()
-    seller_listings = serializers.SerializerMethodField()
+    seller_username = serializers.SerializerMethodField(read_only=True)
+    seller_email = serializers.SerializerMethodField(read_only=True)
+    seller_listings = serializers.SerializerMethodField(read_only=True)
+
+
 
     def get_seller_username(self, obj):
         return obj.seller.username
@@ -21,3 +23,4 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = "__all__"
+        read_only_fields = ("seller_username", "seller_email", "seller_listings")
