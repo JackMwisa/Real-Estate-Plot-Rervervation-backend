@@ -5,4 +5,5 @@ class NotificationsConfig(AppConfig):
     name = "notifications"
 
     def ready(self):
+        # import signals when app is ready
         from . import signals  # noqa

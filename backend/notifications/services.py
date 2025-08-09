@@ -1,12 +1,25 @@
+from typing import Optional, Dict, Any
+from django.contrib.auth import get_user_model
 from .models import Notification
 
-def notify(user, verb, *, actor=None, target=None, payload=None, channel="in_app"):
-    """Create a notification in a single call."""
+User = get_user_model()
+
+def notify(
+    *,
+    user: User,
+    message: str,
+    verb: str = "",
+    url: str = "",
+    metadata: Optional[Dict[str, Any]] = None,
+) -> Notification:
+    """
+    Create and return a Notification in a single call.
+    Use this from views, signals, or Celery tasks.
+    """
     return Notification.objects.create(
         user=user,
-        verb=verb,
-        actor=actor,
-        target=target,
-        payload=payload or {},
-        channel=channel,
+        message=message,
+        verb=verb[:64] if verb else "",
+        url=url or "",
+        metadata=metadata or {},
     )

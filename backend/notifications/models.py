@@ -1,35 +1,33 @@
-from django.conf import settings
 from django.db import models
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
 
 class Notification(models.Model):
+    # who will receive it
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="notifications",
     )
-    verb = models.CharField(max_length=140)
+    # concise tag for filtering/grouping in UI (“listing”, “profile”, “system”, etc.)
+    verb = models.CharField(max_length=64, blank=True, default="")
+    # human-friendly text to show
+    message = models.TextField()
 
-    actor_ct = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
-    actor_id = models.PositiveIntegerField(null=True, blank=True)
-    actor = GenericForeignKey("actor_ct", "actor_id")
+    # optional deep-link (frontend route)
+    url = models.CharField(max_length=255, blank=True, default="")
 
-    target_ct = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
-    target_id = models.PositiveIntegerField(null=True, blank=True)
-    target = GenericForeignKey("target_ct", "target_id")
-
-    payload = models.JSONField(default=dict, blank=True)
-    channel = models.CharField(max_length=20, default="in_app")  # in_app/email/push
+    # whether the user has read it
     is_read = models.BooleanField(default=False)
+
+    # optional context (ids, extra info)
+    # store small JSON blobs – keep it lightweight
+    # If you’re on SQLite < 3.38, you can switch to TextField.
+    metadata = models.JSONField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        indexes = [
-            models.Index(fields=["user", "-created_at"]),
-            models.Index(fields=["user", "is_read"]),
-        ]
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.user} – {self.verb}"
+        return f"[{self.verb}] {self.message[:60]}"
