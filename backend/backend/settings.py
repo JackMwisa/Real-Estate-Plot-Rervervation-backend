@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "listings",
     "users",
     "payments",
+    "notifications",
 ]
 
 MIDDLEWARE = [
