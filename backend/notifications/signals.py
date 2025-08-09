@@ -17,3 +17,5 @@ def listing_created_notification(sender, instance: Listing, created, **kwargs):
             url=f"/listings/{instance.pk}",  # frontend route
             metadata={"listing_id": instance.pk},
         )
+
+
