@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "djoser",
     "storages",
+    "django_filters",
 
     # your apps
     "listings",
