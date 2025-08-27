@@ -1,252 +1,559 @@
-from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from rest_framework import generics, permissions, status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.db.models import Q, Count
+from datetime import timedelta
+import random
+import string
+
+from listings.models import Listing
 from ..models import VisitSlot, Visit, VisitReminderTask, DirectBookingInquiry
+from .serializers import (
+    VisitSlotSerializer, VisitSerializer, VisitCreateSerializer,
+    VisitCheckinSerializer, VirtualTourAccessSerializer, VisitFeedbackSerializer,
+    DirectBookingInquirySerializer, DirectBookingInquiryCreateSerializer,
+    VisitReminderTaskSerializer
+)
 
-User = get_user_model()
 
-
-class VisitSlotSerializer(serializers.ModelSerializer):
-    agent_username = serializers.CharField(source='agent.username', read_only=True)
-    listing_title = serializers.CharField(source='listing.title', read_only=True)
-    available_capacity = serializers.ReadOnlyField()
-    is_full = serializers.ReadOnlyField()
-    is_past = serializers.ReadOnlyField()
+class IsAgentOrStaff(permissions.BasePermission):
+    """Allow agents (listing owners) and staff"""
     
-    class Meta:
-        model = VisitSlot
-        fields = [
-            'tour_type', 'virtual_tour_url', 'meeting_location',
-            'start_at', 'end_at', 'capacity', 'available_capacity', 'is_full',
-            'fee_amount', 'currency', 'is_active', 'notes', 'is_past',
-            'supports_virtual', 'supports_onsite', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'agent', 'created_at', 'updated_at']
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
 
-    def validate(self, data):
-        if data.get('start_at') and data.get('end_at'):
-            if data['start_at'] >= data['end_at']:
-                raise serializers.ValidationError("End time must be after start time")
-            
-            if data['start_at'] <= timezone.now():
-                raise serializers.ValidationError("Start time must be in the future")
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_staff:
+            return True
         
-        # Validate virtual tour URL for virtual/hybrid tours
-        tour_type = data.get('tour_type')
-        virtual_tour_url = data.get('virtual_tour_url')
+        if hasattr(obj, 'listing'):
+            return obj.listing.seller == request.user
+        elif hasattr(obj, 'agent'):
+            return obj.agent == request.user
+        elif hasattr(obj, 'slot'):
+            return obj.slot.agent == request.user
         
-        if tour_type in ['virtual', 'hybrid'] and not virtual_tour_url:
-            raise serializers.ValidationError("Virtual tour URL is required for virtual/hybrid tours")
-        
-        return data
-
-    def create(self, validated_data):
-        # Set agent to current user
-        validated_data['agent'] = self.context['request'].user
-        return super().create(validated_data)
+        return False
 
 
-class DirectBookingInquirySerializer(serializers.ModelSerializer):
-    visit_details = serializers.SerializerMethodField()
-    listing_title = serializers.CharField(source='visit.listing.title', read_only=True)
-    buyer_username = serializers.CharField(source='visit.buyer.username', read_only=True)
-    is_expired = serializers.ReadOnlyField()
+class IsVisitParticipant(permissions.BasePermission):
+    """Allow visit participants (buyer, agent) and staff"""
     
-    class Meta:
-        model = DirectBookingInquiry
-        fields = [
-            'id', 'visit', 'visit_details', 'listing_title', 'buyer_username',
-            'status', 'offered_amount', 'currency', 'proposed_terms',
-            'buyer_message', 'agent_response', 'is_expired',
-            'created_at', 'updated_at', 'responded_at', 'expires_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+    def has_permission(self, request, view):
+        return request.user.is_authenticated
+
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_staff:
+            return True
+        return (
+            obj.buyer == request.user or 
+            obj.slot.agent == request.user
+        )
+
+
+class VisitSlotListCreateView(generics.ListCreateAPIView):
+    """
+    GET /api/visits/slots/ - List available visit slots
+    POST /api/visits/slots/ - Create visit slot (agents only)
+    """
+    serializer_class = VisitSlotSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['listing', 'agent', 'tour_type', 'is_active']
+    search_fields = ['listing__title', 'meeting_location', 'notes']
+    ordering_fields = ['start_at', 'created_at', 'fee_amount']
+    ordering = ['start_at']
     
-    def get_visit_details(self, obj):
-        return {
-            'id': str(obj.visit.id),
-            'booking_intent': obj.visit.booking_intent,
-            'budget_range': obj.visit.budget_range,
-            'move_in_date': obj.visit.move_in_date,
-            'selected_tour_type': obj.visit.selected_tour_type
-        }
-class VisitSerializer(serializers.ModelSerializer):
-    buyer_username = serializers.CharField(source='buyer.username', read_only=True)
-    listing_title = serializers.CharField(source='listing.title', read_only=True)
-    agent_username = serializers.CharField(source='slot.agent.username', read_only=True)
-    slot_time = serializers.SerializerMethodField()
-    can_checkin = serializers.ReadOnlyField()
-    can_access_virtual_tour = serializers.ReadOnlyField()
-    is_past_due = serializers.ReadOnlyField()
-    booking_inquiry = DirectBookingInquirySerializer(read_only=True)
+    def get_queryset(self):
+        queryset = VisitSlot.objects.select_related(
+            'listing', 'agent'
+        ).prefetch_related('visits')
+        
+        # Filter to future slots by default
+        if not self.request.query_params.get('include_past'):
+            queryset = queryset.filter(start_at__gt=timezone.now())
+        
+        # Filter by user role
+        if not self.request.user.is_staff:
+            if self.request.method == 'GET':
+                # Users can see all active slots
+                queryset = queryset.filter(is_active=True)
+            else:
+                # Only agents can create slots for their listings
+                queryset = queryset.filter(agent=self.request.user)
+        
+        return queryset
+
+
+class VisitSlotDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    GET/PUT/DELETE /api/visits/slots/{id}/
+    """
+    serializer_class = VisitSlotSerializer
+    permission_classes = [IsAgentOrStaff]
     
-    class Meta:
-        model = Visit
-        fields = [
-            'id', 'listing', 'listing_title', 'buyer', 'buyer_username',
-            'slot', 'slot_time', 'agent_username', 'status', 
-            'selected_tour_type', 'booking_intent', 'budget_range', 'move_in_date',
-            'visitor_count', 'special_requests', 'fee_amount', 'currency', 'fee_paid',
-            'payment_reference', 'checkin_code', 'checkin_at', 'checkin_location',
-            'virtual_tour_accessed_at', 'virtual_tour_duration',
-            'proof_photo', 'buyer_rating', 'buyer_feedback', 'agent_notes',
-            'can_checkin', 'can_access_virtual_tour', 'is_past_due', 
-            'booking_inquiry', 'created_at', 'updated_at', 'confirmed_at', 'completed_at'
-        ]
-        read_only_fields = [
-            'id', 'buyer', 'checkin_code', 'checkin_at', 'created_at',
-            'updated_at', 'confirmed_at', 'completed_at', 'virtual_tour_accessed_at'
-        ]
+    def get_queryset(self):
+        return VisitSlot.objects.select_related('listing', 'agent')
 
-    def get_slot_time(self, obj):
-        return {
-            'start_at': obj.slot.start_at,
-            'end_at': obj.slot.end_at
-        }
 
-    def validate_slot(self, value):
-        # Check if slot has available capacity
-        if value.available_capacity < 1:
-            raise serializers.ValidationError("This time slot is fully booked")
-        
-        # Check if slot is in the future
-        if value.start_at <= timezone.now():
-            raise serializers.ValidationError("Cannot book visits for past time slots")
-        
-        return value
+class VisitListCreateView(generics.ListCreateAPIView):
+    """
+    GET /api/visits/ - List visits
+    POST /api/visits/ - Request visit
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['status', 'listing', 'selected_tour_type']
+    search_fields = ['listing__title', 'special_requests']
+    ordering_fields = ['created_at', 'slot__start_at']
+    ordering = ['-created_at']
     
-    def validate(self, data):
-        # Validate tour type compatibility with slot
-        slot = data.get('slot')
-        selected_tour_type = data.get('selected_tour_type', 'onsite')
-        
-        if slot:
-            if selected_tour_type == 'virtual' and not slot.supports_virtual:
-                raise serializers.ValidationError("This slot does not support virtual tours")
-            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
-                raise serializers.ValidationError("This slot does not support onsite tours")
-        
-        return data
-
-    def validate_visitor_count(self, value):
-        if hasattr(self, 'initial_data') and 'slot' in self.initial_data:
-            try:
-                slot = VisitSlot.objects.get(id=self.initial_data['slot'])
-                if value > slot.available_capacity:
-                    raise serializers.ValidationError(
-                        f"Visitor count exceeds available capacity ({slot.available_capacity})"
-                    )
-            except VisitSlot.DoesNotExist:
-                pass
-        
-        return value
-
-    def create(self, validated_data):
-        # Set buyer to current user
-        validated_data['buyer'] = self.context['request'].user
-        
-        # Set fee amount from slot if applicable
-        slot = validated_data['slot']
-        if slot.fee_amount:
-            validated_data['fee_amount'] = slot.fee_amount
-            validated_data['currency'] = slot.currency
-        
-        return super().create(validated_data)
-
-
-class VisitCreateSerializer(serializers.ModelSerializer):
-    """Simplified serializer for creating visits"""
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return VisitCreateSerializer
+        return VisitSerializer
     
-    class Meta:
-        model = Visit
-        fields = [
-            'slot', 'selected_tour_type', 'booking_intent', 'budget_range', 
-            'move_in_date', 'visitor_count', 'special_requests'
-        ]
-
-    def validate_slot(self, value):
-        # Check if user already has a visit for this slot
-        user = self.context['request'].user
-        if Visit.objects.filter(buyer=user, slot=value).exists():
-            raise serializers.ValidationError("You already have a visit booked for this slot")
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Visit.objects.select_related(
+            'listing', 'buyer', 'slot', 'slot__agent'
+        )
         
-        # Check slot availability
-        if value.available_capacity < 1:
-            raise serializers.ValidationError("This time slot is fully booked")
+        if user.is_staff:
+            return queryset
+        else:
+            # Users see visits they're involved in
+            return queryset.filter(
+                Q(buyer=user) | Q(slot__agent=user)
+            )
+
+
+class VisitDetailView(generics.RetrieveUpdateAPIView):
+    """
+    GET/PUT /api/visits/{id}/
+    """
+    serializer_class = VisitSerializer
+    permission_classes = [IsVisitParticipant]
+    
+    def get_queryset(self):
+        return Visit.objects.select_related(
+            'listing', 'buyer', 'slot', 'slot__agent'
+        )
+
+
+class MyVisitsListView(generics.ListAPIView):
+    """
+    GET /api/visits/my-visits/
+    List current user's visits
+    """
+    serializer_class = VisitSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['status', 'selected_tour_type']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        return Visit.objects.filter(
+            buyer=self.request.user
+        ).select_related('listing', 'slot', 'slot__agent')
+
+
+class AgentVisitsListView(generics.ListAPIView):
+    """
+    GET /api/visits/agent-visits/
+    List visits for agent's properties
+    """
+    serializer_class = VisitSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['status', 'selected_tour_type', 'listing']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        return Visit.objects.filter(
+            slot__agent=self.request.user
+        ).select_related('listing', 'buyer', 'slot')
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def confirm_visit(request, pk):
+    """
+    POST /api/visits/{id}/confirm/
+    Confirm a visit request (agent only)
+    """
+    visit = get_object_or_404(Visit, id=pk)
+    
+    # Check permissions
+    if not request.user.is_staff and visit.slot.agent != request.user:
+        return Response({'detail': 'Only the agent can confirm visits'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+    
+    if visit.status != 'requested':
+        return Response({'detail': 'Visit is not in requested status'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    # Generate check-in code
+    checkin_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    
+    visit.status = 'confirmed'
+    visit.checkin_code = checkin_code
+    visit.confirmed_at = timezone.now()
+    visit.save(update_fields=['status', 'checkin_code', 'confirmed_at', 'updated_at'])
+    
+    return Response({
+        'status': 'confirmed',
+        'checkin_code': checkin_code,
+        'message': 'Visit confirmed successfully'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def cancel_visit(request, pk):
+    """
+    POST /api/visits/{id}/cancel/
+    Cancel a visit
+    """
+    visit = get_object_or_404(Visit, id=pk)
+    
+    # Check permissions
+    if not request.user.is_staff and visit.buyer != request.user and visit.slot.agent != request.user:
+        return Response({'detail': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+    
+    if visit.status in ['completed', 'cancelled']:
+        return Response({'detail': 'Visit cannot be cancelled'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    visit.status = 'cancelled'
+    visit.save(update_fields=['status', 'updated_at'])
+    
+    return Response({
+        'status': 'cancelled',
+        'message': 'Visit cancelled successfully'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def checkin_visit(request, pk):
+    """
+    POST /api/visits/{id}/checkin/
+    Check in to a visit
+    """
+    visit = get_object_or_404(Visit, id=pk)
+    
+    # Check permissions
+    if visit.buyer != request.user:
+        return Response({'detail': 'Only the visitor can check in'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+    
+    if not visit.can_checkin:
+        return Response({'detail': 'Check-in not available for this visit'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    serializer = VisitCheckinSerializer(data=request.data, context={'visit': visit})
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Update visit
+    visit.status = 'checked_in'
+    visit.checkin_at = timezone.now()
+    visit.checkin_location = serializer.validated_data.get('location')
+    
+    if 'proof_photo' in request.FILES:
+        visit.proof_photo = request.FILES['proof_photo']
+    
+    visit.save(update_fields=[
+        'status', 'checkin_at', 'checkin_location', 'proof_photo', 'updated_at'
+    ])
+    
+    return Response({
+        'status': 'checked_in',
+        'checkin_at': visit.checkin_at,
+        'message': 'Successfully checked in to visit'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def complete_visit(request, pk):
+    """
+    POST /api/visits/{id}/complete/
+    Mark visit as completed (agent only)
+    """
+    visit = get_object_or_404(Visit, id=pk)
+    
+    # Check permissions
+    if not request.user.is_staff and visit.slot.agent != request.user:
+        return Response({'detail': 'Only the agent can complete visits'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+    
+    if visit.status != 'checked_in':
+        return Response({'detail': 'Visit must be checked in before completion'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    visit.status = 'completed'
+    visit.completed_at = timezone.now()
+    visit.save(update_fields=['status', 'completed_at', 'updated_at'])
+    
+    return Response({
+        'status': 'completed',
+        'completed_at': visit.completed_at,
+        'message': 'Visit completed successfully'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def submit_feedback(request, pk):
+    """
+    POST /api/visits/{id}/feedback/
+    Submit visit feedback (buyer only)
+    """
+    visit = get_object_or_404(Visit, id=pk)
+    
+    # Check permissions
+    if visit.buyer != request.user:
+        return Response({'detail': 'Only the visitor can submit feedback'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+    
+    if visit.status != 'completed':
+        return Response({'detail': 'Visit must be completed before feedback'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    serializer = VisitFeedbackSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    visit.buyer_rating = serializer.validated_data['rating']
+    visit.buyer_feedback = serializer.validated_data.get('feedback', '')
+    visit.save(update_fields=['buyer_rating', 'buyer_feedback', 'updated_at'])
+    
+    return Response({
+        'status': 'feedback_submitted',
+        'rating': visit.buyer_rating,
+        'message': 'Feedback submitted successfully'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def access_virtual_tour(request, pk):
+    """
+    POST /api/visits/{id}/virtual-tour/
+    Access virtual tour for visit
+    """
+    visit = get_object_or_404(Visit, id=pk)
+    
+    # Check permissions
+    if visit.buyer != request.user:
+        return Response({'detail': 'Only the visitor can access virtual tour'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+    
+    if not visit.can_access_virtual_tour:
+        return Response({'detail': 'Virtual tour access not available'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    serializer = VirtualTourAccessSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Update access time
+    visit.virtual_tour_accessed_at = timezone.now()
+    
+    duration = serializer.validated_data.get('duration_seconds')
+    if duration:
+        visit.virtual_tour_duration = duration
+    
+    visit.save(update_fields=['virtual_tour_accessed_at', 'virtual_tour_duration', 'updated_at'])
+    
+    return Response({
+        'status': 'access_granted',
+        'accessed_at': visit.virtual_tour_accessed_at,
+        'tour_url': visit.slot.virtual_tour_url,
+        'message': 'Virtual tour access granted'
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def listing_available_slots(request, listing_id):
+    """
+    GET /api/listings/{id}/available-slots/
+    Get available visit slots for a listing
+    """
+    listing = get_object_or_404(Listing, id=listing_id)
+    
+    # Get future slots with availability
+    slots = VisitSlot.objects.filter(
+        listing=listing,
+        is_active=True,
+        start_at__gt=timezone.now()
+    ).exclude(
+        visits__status__in=['confirmed', 'checked_in']
+    ).select_related('agent').order_by('start_at')
+    
+    # Filter to slots with available capacity
+    available_slots = [slot for slot in slots if slot.available_capacity > 0]
+    
+    serializer = VisitSlotSerializer(available_slots, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def my_upcoming_visits(request):
+    """
+    GET /api/visits/my-upcoming-visits/
+    Get user's upcoming visits
+    """
+    upcoming_visits = Visit.objects.filter(
+        buyer=request.user,
+        status__in=['requested', 'confirmed', 'checked_in'],
+        slot__start_at__gt=timezone.now()
+    ).select_related('listing', 'slot', 'slot__agent').order_by('slot__start_at')
+    
+    serializer = VisitSerializer(upcoming_visits, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def create_booking_inquiry(request, visit_id):
+    """
+    POST /api/visits/{id}/booking-inquiry/
+    Create direct booking inquiry from visit
+    """
+    visit = get_object_or_404(Visit, id=visit_id)
+    
+    # Check permissions
+    if visit.buyer != request.user:
+        return Response({'detail': 'Only the visitor can create booking inquiries'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+    
+    if visit.status != 'completed':
+        return Response({'detail': 'Visit must be completed before creating booking inquiry'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if inquiry already exists
+    if hasattr(visit, 'booking_inquiry'):
+        return Response({'detail': 'Booking inquiry already exists for this visit'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    serializer = DirectBookingInquiryCreateSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    inquiry = serializer.save(visit=visit)
+    
+    return Response({
+        'status': 'created',
+        'inquiry_id': inquiry.id,
+        'message': 'Booking inquiry created successfully'
+    }, status=status.HTTP_201_CREATED)
+
+
+class BookingInquiryListView(generics.ListAPIView):
+    """
+    GET /api/visits/booking-inquiries/
+    List booking inquiries for user
+    """
+    serializer_class = DirectBookingInquirySerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['status']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        user = self.request.user
         
-        if value.start_at <= timezone.now():
-            raise serializers.ValidationError("Cannot book visits for past time slots")
+        if user.is_staff:
+            return DirectBookingInquiry.objects.select_related(
+                'visit', 'visit__listing', 'visit__buyer'
+            )
+        else:
+            # Users see inquiries they're involved in
+            return DirectBookingInquiry.objects.filter(
+                Q(visit__buyer=user) | Q(visit__slot__agent=user)
+            ).select_related('visit', 'visit__listing', 'visit__buyer')
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def respond_to_inquiry(request, pk):
+    """
+    POST /api/visits/booking-inquiries/{id}/respond/
+    Respond to booking inquiry (agent only)
+    """
+    inquiry = get_object_or_404(DirectBookingInquiry, id=pk)
+    
+    # Check permissions
+    if not request.user.is_staff and inquiry.visit.slot.agent != request.user:
+        return Response({'detail': 'Only the agent can respond to inquiries'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+    
+    if inquiry.status != 'pending':
+        return Response({'detail': 'Inquiry has already been responded to'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    response_text = request.data.get('response', '')
+    new_status = request.data.get('status', 'responded')  # responded, accepted, declined
+    
+    if not response_text:
+        return Response({'detail': 'Response text is required'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    inquiry.agent_response = response_text
+    inquiry.status = new_status
+    inquiry.responded_at = timezone.now()
+    inquiry.save(update_fields=['agent_response', 'status', 'responded_at', 'updated_at'])
+    
+    return Response({
+        'status': new_status,
+        'message': 'Response submitted successfully',
+        'responded_at': inquiry.responded_at
+    })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def visit_analytics(request):
+    """
+    GET /api/visits/analytics/
+    Get visit analytics for user or global (staff)
+    """
+    user = request.user
+    
+    if user.is_staff:
+        # Global analytics
+        from django.db.models import Avg
         
-        return value
-    
-    def validate(self, data):
-        # Validate tour type compatibility
-        slot = data.get('slot')
-        selected_tour_type = data.get('selected_tour_type', 'onsite')
+        analytics = Visit.objects.aggregate(
+            total_visits=Count('id'),
+            confirmed_visits=Count('id', filter=Q(status='confirmed')),
+            completed_visits=Count('id', filter=Q(status='completed')),
+            cancelled_visits=Count('id', filter=Q(status='cancelled')),
+            avg_rating=Avg('buyer_rating', filter=Q(buyer_rating__isnull=False))
+        )
         
-        if slot:
-            if selected_tour_type == 'virtual' and not slot.supports_virtual:
-                raise serializers.ValidationError("This slot does not support virtual tours")
-            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
-                raise serializers.ValidationError("This slot does not support onsite tours")
+        # Visit type distribution
+        tour_type_distribution = list(
+            Visit.objects.values('selected_tour_type')
+            .annotate(count=Count('id'))
+            .order_by('-count')
+        )
         
-        return data
-
-
-class VisitCheckinSerializer(serializers.Serializer):
-    """Serializer for visit check-in"""
+        analytics['tour_type_distribution'] = tour_type_distribution
+        
+    else:
+        # User analytics
+        user_visits = Visit.objects.filter(
+            Q(buyer=user) | Q(slot__agent=user)
+        )
+        
+        analytics = user_visits.aggregate(
+            total_visits=Count('id'),
+            as_buyer=Count('id', filter=Q(buyer=user)),
+            as_agent=Count('id', filter=Q(slot__agent=user)),
+            completed_visits=Count('id', filter=Q(status='completed'))
+        )
     
-    checkin_code = serializers.CharField(max_length=8)
-    location = serializers.JSONField(required=False)
-    proof_photo = serializers.ImageField(required=False)
-
-    def validate_checkin_code(self, value):
-        visit = self.context['visit']
-        if visit.checkin_code != value.upper():
-            raise serializers.ValidationError("Invalid check-in code")
-        return value.upper()
-
-
-class VirtualTourAccessSerializer(serializers.Serializer):
-    """Serializer for virtual tour access"""
-    
-    duration_seconds = serializers.IntegerField(required=False, min_value=1)
-class VisitFeedbackSerializer(serializers.Serializer):
-    """Serializer for visit feedback"""
-    
-    rating = serializers.IntegerField(min_value=1, max_value=5)
-    feedback = serializers.CharField(max_length=1000, required=False, allow_blank=True)
-
-
-class DirectBookingInquiryCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating booking inquiries"""
-    
-    class Meta:
-        model = DirectBookingInquiry
-        fields = [
-            'offered_amount', 'currency', 'proposed_terms', 'buyer_message', 'expires_at'
-        ]
-    
-    def validate_offered_amount(self, value):
-        if value and value <= 0:
-            raise serializers.ValidationError("Offered amount must be positive")
-        return value
-class VisitReminderTaskSerializer(serializers.ModelSerializer):
-    visit_details = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = VisitReminderTask
-        fields = [
-            'id', 'visit', 'visit_details', 'reminder_type', 'scheduled_at',
-            'sent_at', 'is_sent', 'created_at'
-        ]
-        read_only_fields = ['id', 'created_at']
-
-    def get_visit_details(self, obj):
-        return {
-            'id': str(obj.visit.id),
-            'listing_title': obj.visit.listing.title,
-            'buyer_username': obj.visit.buyer.username,
-            'slot_time': obj.visit.slot.start_at,
-            'tour_type': obj.visit.selected_tour_type
-        }
+    return Response(analytics)
