@@ -25,6 +25,7 @@ class ListingSerializer(serializers.ModelSerializer):
     seller_agency_name = serializers.SerializerMethodField()
     listing_pois_within_10km = serializers.SerializerMethodField()
     image_main_url = serializers.SerializerMethodField()
+    verification_status = serializers.SerializerMethodField()
     # Placeholder for Phase 1; will return real value after we add favorites app
     is_favorited = serializers.SerializerMethodField()
 
@@ -81,6 +82,60 @@ class ListingSerializer(serializers.ModelSerializer):
         # return obj.favorited_by.filter(user=req.user).exists()
         # For now (before the app exists), always False:
         return False
+
+    def get_verification_status(self, obj):
+        """Get verification status for the listing"""
+        # Get the latest verification case for this listing
+        from verification.models import VerificationCase
+        
+        latest_case = VerificationCase.objects.filter(
+            listing=obj,
+            case_type='listing'
+        ).order_by('-created_at').first()
+        
+        if not latest_case:
+            return {
+                'is_verified': False,
+                'status': 'not_submitted',
+                'verified_at': None
+            }
+        
+        if latest_case.status == 'verified':
+            verified_at = None
+            if hasattr(latest_case, 'outcome'):
+                verified_at = latest_case.outcome.decided_at
+            
+            return {
+                'is_verified': True,
+                'status': 'verified',
+                'verified_at': verified_at
+            }
+        elif latest_case.status in ['submitted', 'under_review', 'needs_more_info']:
+            return {
+                'is_verified': False,
+                'status': latest_case.status,
+                'verified_at': None
+            }
+        else:  # rejected
+            return {
+                'is_verified': False,
+                'status': 'rejected',
+                'verified_at': None
+            }
+
+    def get_tours_summary(self, obj):
+        """Get tours summary for the listing"""
+        from tours.models import TourAsset
+        
+        tours = TourAsset.objects.filter(listing=obj, is_active=True)
+        
+        return {
+            'total_tours': tours.count(),
+            'has_3d_tours': tours.filter(kind='3d').exists(),
+            'has_video_tours': tours.filter(kind='video').exists(),
+            'has_360_photos': tours.filter(kind='360').exists(),
+            'has_vr': tours.filter(kind='vr').exists(),
+        }
 
     class Meta:
         model = Listing

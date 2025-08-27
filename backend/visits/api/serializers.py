@@ -17,6 +17,7 @@ class VisitSlotSerializer(serializers.ModelSerializer):
         model = VisitSlot
         fields = [
             'tour_type', 'virtual_tour_url', 'meeting_location',
+            'start_at', 'end_at', 'capacity', 'available_capacity', 'is_full',
             'fee_amount', 'currency', 'is_active', 'notes', 'is_past',
             'supports_virtual', 'supports_onsite', 'created_at', 'updated_at'
         ]
