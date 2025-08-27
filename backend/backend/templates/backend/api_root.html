@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Platform API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 3rem;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h2 {
+            color: #1f2937;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .icon {
+            width: 24px;
+            height: 24px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        
+        .endpoint-list {
+            list-style: none;
+        }
+        
+        .endpoint-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .endpoint-item:last-child {
+            border-bottom: none;
+        }
+        
+        .endpoint-path {
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+        
+        .method-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .method-get { background: #dbeafe; color: #1e40af; }
+        .method-post { background: #dcfce7; color: #166534; }
+        .method-put { background: #fef3c7; color: #92400e; }
+        .method-delete { background: #fee2e2; color: #991b1b; }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+        }
+        
+        .feature-enabled {
+            color: #10b981;
+        }
+        
+        .feature-disabled {
+            color: #ef4444;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 3rem;
+            opacity: 0.8;
+        }
+        
+        .admin-link {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Real Estate Platform API</h1>
+            <p>Comprehensive Django REST API for Property Management</p>
+            <div class="status-badge">✅ System Operational</div>
+            <a href="/admin/" class="admin-link">🎛️ Access Admin Panel</a>
+        </div>
+        
+        <div class="grid">
+            <!-- System Statistics -->
+            <div class="card">
+                <h2>
+                    📊 System Statistics
+                </h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.total_users }}</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.total_listings }}</div>
+                        <div class="stat-label">Total Listings</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.available_listings }}</div>
+                        <div class="stat-label">Available</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ stats.recent_notifications }}</div>
+                        <div class="stat-label">Recent Notifications</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Core API Endpoints -->
+            <div class="card">
+                <h2>🔗 Core API Endpoints</h2>
+                <ul class="endpoint-list">
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/listings/</span>
+                        <span class="method-badge method-get">GET</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/profiles/</span>
+                        <span class="method-badge method-get">GET</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/payments/</span>
+                        <span class="method-badge method-post">POST</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/notifications/</span>
+                        <span class="method-badge method-get">GET</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Advanced Features -->
+            <div class="card">
+                <h2>🚀 Advanced Features</h2>
+                <ul class="endpoint-list">
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/search/</span>
+                        <span class="method-badge method-get">SEARCH</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/tours/</span>
+                        <span class="method-badge method-get">TOURS</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/visits/</span>
+                        <span class="method-badge method-post">VISITS</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/bookings/</span>
+                        <span class="method-badge method-post">ESCROW</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/wallet/</span>
+                        <span class="method-badge method-get">WALLET</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span class="endpoint-path">/api/ads/</span>
+                        <span class="method-badge method-post">ADS</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Feature Status -->
+            <div class="card">
+                <h2>⚙️ Feature Status</h2>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <span class="{% if features.bookings_enabled %}feature-enabled{% else %}feature-disabled{% endif %}">
+                            {% if features.bookings_enabled %}✅{% else %}❌{% endif %}
+                        </span>
+                        <span>Bookings & Escrow</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="{% if features.wallet_enabled %}feature-enabled{% else %}feature-disabled{% endif %}">
+                            {% if features.wallet_enabled %}✅{% else %}❌{% endif %}
+                        </span>
+                        <span>Wallet System</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="{% if features.ads_enabled %}feature-enabled{% else %}feature-disabled{% endif %}">
+                            {% if features.ads_enabled %}✅{% else %}❌{% endif %}
+                        </span>
+                        <span>Advertising</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="{% if features.tours_enabled %}feature-enabled{% else %}feature-disabled{% endif %}">
+                            {% if features.tours_enabled %}✅{% else %}❌{% endif %}
+                        </span>
+                        <span>Virtual Tours</span>
+                    </div>
+                    <div class="feature-item">
+                        <span class="{% if features.verification_enabled %}feature-enabled{% else %}feature-disabled{% endif %}">
+                            {% if features.verification_enabled %}✅{% else %}❌{% endif %}
+                        </span>
+                        <span>Verification</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Information -->
+            <div class="card">
+                <h2>🖥️ System Information</h2>
+                <ul class="endpoint-list">
+                    <li class="endpoint-item">
+                        <span>Version</span>
+                        <span class="endpoint-path">{{ system_info.version }}</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span>Environment</span>
+                        <span class="endpoint-path">{{ system_info.environment }}</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span>Database</span>
+                        <span class="endpoint-path">{{ system_info.database }}</span>
+                    </li>
+                    <li class="endpoint-item">
+                        <span>Timezone</span>
+                        <span class="endpoint-path">{{ system_info.timezone }}</span>
+                    </li>
+                </ul>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card">
+                <h2>⚡ Quick Actions</h2>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <a href="/admin/" style="display: block; padding: 1rem; background: #3b82f6; color: white; text-decoration: none; border-radius: 0.5rem; text-align: center; font-weight: 600;">
+                        🎛️ Admin Dashboard
+                    </a>
+                    <a href="/api/listings/" style="display: block; padding: 1rem; background: #10b981; color: white; text-decoration: none; border-radius: 0.5rem; text-align: center; font-weight: 600;">
+                        🏠 Browse Listings API
+                    </a>
+                    <a href="/api/search/" style="display: block; padding: 1rem; background: #f59e0b; color: white; text-decoration: none; border-radius: 0.5rem; text-align: center; font-weight: 600;">
+                        🔍 Search API
+                    </a>
+                    <a href="/api/wallet/" style="display: block; padding: 1rem; background: #8b5cf6; color: white; text-decoration: none; border-radius: 0.5rem; text-align: center; font-weight: 600;">
+                        💰 Wallet API
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 Real Estate Platform. Built with Django REST Framework.</p>
+            <p>🚀 Powered by Django {{ system_info.version }} | 🎨 Admin by Jazzmin</p>
+        </div>
+    </div>
+</body>
+</html>
