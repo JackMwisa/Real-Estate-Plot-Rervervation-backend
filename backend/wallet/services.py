@@ -1,575 +1,252 @@
-from typing import Dict, Any, Optional, Tuple
-from decimal import Decimal
-from django.db import transaction
-from django.utils import timezone
+from rest_framework import serializers
 from django.contrib.auth import get_user_model
-import uuid
-
-from .models import Wallet, LedgerEntry, Beneficiary, Payout, WalletTransaction, PayoutProvider
+from django.utils import timezone
+from ..models import VisitSlot, Visit, VisitReminderTask, DirectBookingInquiry
 
 User = get_user_model()
 
 
-class WalletService:
-    """Core wallet operations service"""
+class VisitSlotSerializer(serializers.ModelSerializer):
+    agent_username = serializers.CharField(source='agent.username', read_only=True)
+    listing_title = serializers.CharField(source='listing.title', read_only=True)
+    available_capacity = serializers.ReadOnlyField()
+    is_full = serializers.ReadOnlyField()
+    is_past = serializers.ReadOnlyField()
     
-    @staticmethod
-    def get_or_create_wallet(user=None, agency=None, wallet_type='user', currency='USD') -> Wallet:
-        """Get or create wallet for user or agency"""
-        if user:
-            wallet, created = Wallet.objects.get_or_create(
-                owner_user=user,
-                defaults={
-                    'wallet_type': wallet_type,
-                    'currency': currency
-                }
-            )
-        elif agency:
-            wallet, created = Wallet.objects.get_or_create(
-                owner_agency=agency,
-                defaults={
-                    'wallet_type': 'agency',
-                    'currency': currency
-                }
-            )
-        else:
-            raise ValueError("Either user or agency must be provided")
-        
-        return wallet
-    
-    @staticmethod
-    def create_ledger_entry(
-        wallet: Wallet,
-        entry_type: str,
-        amount: Decimal,
-        ref_type: str,
-        ref_id: str,
-        description: str,
-        txid: Optional[uuid.UUID] = None,
-        created_by: Optional[User] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> LedgerEntry:
-        """Create a ledger entry and update wallet balance"""
-        
-        if txid is None:
-            txid = uuid.uuid4()
-        
-        entry = LedgerEntry.objects.create(
-            wallet=wallet,
-            entry_type=entry_type,
-            amount=amount,
-            currency=wallet.currency,
-            ref_type=ref_type,
-            ref_id=ref_id,
-            txid=txid,
-            description=description,
-            created_by=created_by,
-            metadata=metadata or {}
-        )
-        
-        return entry
-    
-    @staticmethod
-    @transaction.atomic
-    def transfer_funds(
-        from_wallet: Wallet,
-        to_wallet: Wallet,
-        amount: Decimal,
-        description: str,
-        ref_type: str = 'transfer',
-        ref_id: str = '',
-        created_by: Optional[User] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> Tuple[LedgerEntry, LedgerEntry]:
-        """Transfer funds between wallets with double-entry bookkeeping"""
-        
-        # Validate transfer
-        can_debit, reason = from_wallet.can_debit(amount)
-        if not can_debit:
-            raise ValueError(f"Cannot debit from wallet: {reason}")
-        
-        if from_wallet.currency != to_wallet.currency:
-            raise ValueError("Currency mismatch between wallets")
-        
-        # Generate transaction ID for grouping
-        txid = uuid.uuid4()
-        
-        # Create transaction record
-        wallet_transaction = WalletTransaction.objects.create(
-            transaction_type='transfer',
-            from_wallet=from_wallet,
-            to_wallet=to_wallet,
-            amount=amount,
-            currency=from_wallet.currency,
-            reference=f"TXN-{txid.hex[:8].upper()}",
-            description=description,
-            related_object_type=ref_type,
-            related_object_id=ref_id,
-            metadata=metadata or {}
-        )
-        
-        # Create debit entry (from wallet)
-        debit_entry = WalletService.create_ledger_entry(
-            wallet=from_wallet,
-            entry_type='debit',
-            amount=amount,
-            ref_type=ref_type,
-            ref_id=ref_id,
-            description=f"Transfer to {to_wallet.get_owner_display()}: {description}",
-            txid=txid,
-            created_by=created_by,
-            metadata=metadata
-        )
-        
-        # Create credit entry (to wallet)
-        credit_entry = WalletService.create_ledger_entry(
-            wallet=to_wallet,
-            entry_type='credit',
-            amount=amount,
-            ref_type=ref_type,
-            ref_id=ref_id,
-            description=f"Transfer from {from_wallet.get_owner_display()}: {description}",
-            txid=txid,
-            created_by=created_by,
-            metadata=metadata
-        )
-        
-        # Mark transaction as completed
-        wallet_transaction.status = 'completed'
-        wallet_transaction.completed_at = timezone.now()
-        wallet_transaction.save(update_fields=['status', 'completed_at', 'updated_at'])
-        
-        return debit_entry, credit_entry
-    
-    @staticmethod
-    def credit_wallet(
-        wallet: Wallet,
-        amount: Decimal,
-        ref_type: str,
-        ref_id: str,
-        description: str,
-        created_by: Optional[User] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> LedgerEntry:
-        """Credit funds to wallet"""
-        return WalletService.create_ledger_entry(
-            wallet=wallet,
-            entry_type='credit',
-            amount=amount,
-            ref_type=ref_type,
-            ref_id=ref_id,
-            description=description,
-            created_by=created_by,
-            metadata=metadata
-        )
-    
-    @staticmethod
-    def debit_wallet(
-        wallet: Wallet,
-        amount: Decimal,
-        ref_type: str,
-        ref_id: str,
-        description: str,
-        created_by: Optional[User] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> LedgerEntry:
-        """Debit funds from wallet"""
-        
-        # Validate debit
-        can_debit, reason = wallet.can_debit(amount)
-        if not can_debit:
-            raise ValueError(f"Cannot debit wallet: {reason}")
-        
-        return WalletService.create_ledger_entry(
-            wallet=wallet,
-            entry_type='debit',
-            amount=amount,
-            ref_type=ref_type,
-            ref_id=ref_id,
-            description=description,
-            created_by=created_by,
-            metadata=metadata
-        )
+    class Meta:
+        model = VisitSlot
+        fields = [
+            'tour_type', 'virtual_tour_url', 'meeting_location',
+            'start_at', 'end_at', 'capacity', 'available_capacity', 'is_full',
+            'fee_amount', 'currency', 'is_active', 'notes', 'is_past',
+            'supports_virtual', 'supports_onsite', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'agent', 'created_at', 'updated_at']
 
-
-class PayoutService:
-    """Service for managing payouts"""
-    
-    @staticmethod
-    def create_payout(
-        wallet: Wallet,
-        beneficiary: Beneficiary,
-        amount: Decimal,
-        created_by: Optional[User] = None,
-        metadata: Optional[Dict[str, Any]] = None
-    ) -> Payout:
-        """Create a new payout request"""
-        
-        # Validate beneficiary
-        if not beneficiary.can_receive_payouts:
-            raise ValueError("Beneficiary cannot receive payouts (inactive or unverified)")
-        
-        if beneficiary.owner != wallet.get_owner():
-            raise ValueError("Beneficiary must belong to wallet owner")
-        
-        # Validate wallet balance
-        can_debit, reason = wallet.can_debit(amount)
-        if not can_debit:
-            raise ValueError(f"Cannot create payout: {reason}")
-        
-        # Get provider and calculate fees
-        provider = PayoutService.get_provider_for_method(beneficiary.payout_method)
-        if not provider:
-            raise ValueError(f"No provider available for {beneficiary.payout_method}")
-        
-        fee_amount = provider.calculate_fee(amount, beneficiary.payout_method)
-        
-        # Check minimum payout amount
-        if amount < provider.min_payout_amount:
-            raise ValueError(f"Amount below minimum payout ({provider.min_payout_amount} {wallet.currency})")
-        
-        # Check maximum payout amount
-        if provider.max_payout_amount and amount > provider.max_payout_amount:
-            raise ValueError(f"Amount exceeds maximum payout ({provider.max_payout_amount} {wallet.currency})")
-        
-        # Create payout
-        payout = Payout.objects.create(
-            wallet=wallet,
-            beneficiary=beneficiary,
-            amount=amount,
-            currency=wallet.currency,
-            fee_amount=fee_amount,
-            requires_approval=amount >= Decimal('1000.00'),  # Require approval for large amounts
-            metadata=metadata or {}
-        )
-        
-        # Create debit ledger entry (hold funds)
-        WalletService.debit_wallet(
-            wallet=wallet,
-            amount=amount,
-            ref_type='payout',
-            ref_id=str(payout.id),
-            description=f"Payout to {beneficiary.name}",
-            created_by=created_by,
-            metadata={'payout_id': str(payout.id)}
-        )
-        
-        return payout
-    
-    @staticmethod
-    def get_provider_for_method(method: str) -> Optional[PayoutProvider]:
-        """Get active provider that supports the given method"""
-        return PayoutProvider.objects.filter(
-            is_active=True,
-            supported_methods__contains=[method]
-        ).first()
-    
-    @staticmethod
-    def process_payout(payout: Payout) -> Dict[str, Any]:
-        """Process a payout through the provider"""
-        if payout.status != 'queued':
-            raise ValueError("Payout must be in queued status")
-        
-        if payout.requires_approval and not payout.approved_at:
-            raise ValueError("Payout requires approval before processing")
-        
-        provider = PayoutService.get_provider_for_method(payout.beneficiary.payout_method)
-        if not provider:
-            raise ValueError("No provider available")
-        
-        # Mark as processing
-        payout.status = 'processing'
-        payout.processed_at = timezone.now()
-        payout.save(update_fields=['status', 'processed_at', 'updated_at'])
-        
-        try:
-            # Here you would integrate with actual payout providers
-            # For now, simulate successful processing
-            result = PayoutService._simulate_provider_payout(payout, provider)
+    def validate(self, data):
+        if data.get('start_at') and data.get('end_at'):
+            if data['start_at'] >= data['end_at']:
+                raise serializers.ValidationError("End time must be after start time")
             
-            if result['success']:
-                payout.status = 'paid'
-                payout.provider_ref = result.get('provider_ref', '')
-                payout.completed_at = timezone.now()
-                payout.save(update_fields=['status', 'provider_ref', 'completed_at', 'updated_at'])
-                
-                return {'status': 'success', 'provider_ref': payout.provider_ref}
-            else:
-                payout.status = 'failed'
-                payout.failure_reason = result.get('error', 'Unknown error')
-                payout.save(update_fields=['status', 'failure_reason', 'updated_at'])
-                
-                # Refund the debited amount
-                WalletService.credit_wallet(
-                    wallet=payout.wallet,
-                    amount=payout.amount,
-                    ref_type='refund',
-                    ref_id=str(payout.id),
-                    description=f"Payout failed - refund for {payout.beneficiary.name}",
-                    metadata={'original_payout_id': str(payout.id)}
-                )
-                
-                return {'status': 'failed', 'error': payout.failure_reason}
+            if data['start_at'] <= timezone.now():
+                raise serializers.ValidationError("Start time must be in the future")
         
-        except Exception as e:
-            payout.status = 'failed'
-            payout.failure_reason = str(e)
-            payout.save(update_fields=['status', 'failure_reason', 'updated_at'])
-            
-            # Refund the debited amount
-            WalletService.credit_wallet(
-                wallet=payout.wallet,
-                amount=payout.amount,
-                ref_type='refund',
-                ref_id=str(payout.id),
-                description=f"Payout failed - refund for {payout.beneficiary.name}",
-                metadata={'original_payout_id': str(payout.id)}
-            )
-            
-            return {'status': 'failed', 'error': str(e)}
-    
-    @staticmethod
-    def _simulate_provider_payout(payout: Payout, provider: PayoutProvider) -> Dict[str, Any]:
-        """Simulate payout processing (replace with real provider integration)"""
-        import random
+        # Validate virtual tour URL for virtual/hybrid tours
+        tour_type = data.get('tour_type')
+        virtual_tour_url = data.get('virtual_tour_url')
         
-        # Simulate 95% success rate
-        if random.random() < 0.95:
-            return {
-                'success': True,
-                'provider_ref': f"{provider.code}-{uuid.uuid4().hex[:8].upper()}"
-            }
-        else:
-            return {
-                'success': False,
-                'error': 'Provider temporarily unavailable'
-            }
+        if tour_type in ['virtual', 'hybrid'] and not virtual_tour_url:
+            raise serializers.ValidationError("Virtual tour URL is required for virtual/hybrid tours")
+        
+        return data
+
+    def create(self, validated_data):
+        # Set agent to current user
+        validated_data['agent'] = self.context['request'].user
+        return super().create(validated_data)
 
 
-class LedgerService:
-    """Service for ledger operations and invariant checking"""
+class DirectBookingInquirySerializer(serializers.ModelSerializer):
+    visit_details = serializers.SerializerMethodField()
+    listing_title = serializers.CharField(source='visit.listing.title', read_only=True)
+    buyer_username = serializers.CharField(source='visit.buyer.username', read_only=True)
+    is_expired = serializers.ReadOnlyField()
     
-    @staticmethod
-    def verify_ledger_invariants(wallet: Optional[Wallet] = None) -> Dict[str, Any]:
-        """Verify double-entry ledger invariants"""
-        from django.db.models import Sum, Q
-        
-        if wallet:
-            # Check specific wallet
-            wallets_to_check = [wallet]
-        else:
-            # Check all wallets
-            wallets_to_check = Wallet.objects.all()
-        
-        results = {
-            'total_wallets_checked': len(wallets_to_check),
-            'invariant_violations': [],
-            'balance_mismatches': [],
-            'orphaned_entries': 0
+    class Meta:
+        model = DirectBookingInquiry
+        fields = [
+            'id', 'visit', 'visit_details', 'listing_title', 'buyer_username',
+            'status', 'offered_amount', 'currency', 'proposed_terms',
+            'buyer_message', 'agent_response', 'is_expired',
+            'created_at', 'updated_at', 'responded_at', 'expires_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_visit_details(self, obj):
+        return {
+            'id': str(obj.visit.id),
+            'booking_intent': obj.visit.booking_intent,
+            'budget_range': obj.visit.budget_range,
+            'move_in_date': obj.visit.move_in_date,
+            'selected_tour_type': obj.visit.selected_tour_type
         }
+class VisitSerializer(serializers.ModelSerializer):
+    buyer_username = serializers.CharField(source='buyer.username', read_only=True)
+    listing_title = serializers.CharField(source='listing.title', read_only=True)
+    agent_username = serializers.CharField(source='slot.agent.username', read_only=True)
+    slot_time = serializers.SerializerMethodField()
+    can_checkin = serializers.ReadOnlyField()
+    can_access_virtual_tour = serializers.ReadOnlyField()
+    is_past_due = serializers.ReadOnlyField()
+    booking_inquiry = DirectBookingInquirySerializer(read_only=True)
+    
+    class Meta:
+        model = Visit
+        fields = [
+            'id', 'listing', 'listing_title', 'buyer', 'buyer_username',
+            'slot', 'slot_time', 'agent_username', 'status', 
+            'selected_tour_type', 'booking_intent', 'budget_range', 'move_in_date',
+            'visitor_count', 'special_requests', 'fee_amount', 'currency', 'fee_paid',
+            'payment_reference', 'checkin_code', 'checkin_at', 'checkin_location',
+            'virtual_tour_accessed_at', 'virtual_tour_duration',
+            'proof_photo', 'buyer_rating', 'buyer_feedback', 'agent_notes',
+            'can_checkin', 'can_access_virtual_tour', 'is_past_due', 
+            'booking_inquiry', 'created_at', 'updated_at', 'confirmed_at', 'completed_at'
+        ]
+        read_only_fields = [
+            'id', 'buyer', 'checkin_code', 'checkin_at', 'created_at',
+            'updated_at', 'confirmed_at', 'completed_at', 'virtual_tour_accessed_at'
+        ]
+
+    def get_slot_time(self, obj):
+        return {
+            'start_at': obj.slot.start_at,
+            'end_at': obj.slot.end_at
+        }
+
+    def validate_slot(self, value):
+        # Check if slot has available capacity
+        if value.available_capacity < 1:
+            raise serializers.ValidationError("This time slot is fully booked")
         
-        for wallet in wallets_to_check:
-            # Calculate balance from ledger
-            credits = wallet.ledger_entries.filter(
-                entry_type='credit'
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            
-            debits = wallet.ledger_entries.filter(
-                entry_type='debit'
-            ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            
-            calculated_balance = credits - debits
-            
-            # Check balance mismatch
-            if calculated_balance != wallet.balance_cached:
-                results['balance_mismatches'].append({
-                    'wallet_id': str(wallet.id),
-                    'owner': wallet.get_owner_display(),
-                    'cached_balance': wallet.balance_cached,
-                    'calculated_balance': calculated_balance,
-                    'difference': calculated_balance - wallet.balance_cached
-                })
+        # Check if slot is in the future
+        if value.start_at <= timezone.now():
+            raise serializers.ValidationError("Cannot book visits for past time slots")
         
-        # Check for orphaned ledger entries (entries without valid txid pairs)
-        all_txids = LedgerEntry.objects.values_list('txid', flat=True).distinct()
+        return value
+    
+    def validate(self, data):
+        # Validate tour type compatibility with slot
+        slot = data.get('slot')
+        selected_tour_type = data.get('selected_tour_type', 'onsite')
         
-        for txid in all_txids:
-            entries = LedgerEntry.objects.filter(txid=txid)
-            
-            # For transfers, should have exactly 2 entries (1 credit, 1 debit)
-            if entries.count() == 2:
-                credit_sum = entries.filter(entry_type='credit').aggregate(
-                    total=Sum('amount')
-                )['total'] or Decimal('0.00')
-                
-                debit_sum = entries.filter(entry_type='debit').aggregate(
-                    total=Sum('amount')
-                )['total'] or Decimal('0.00')
-                
-                if credit_sum != debit_sum:
-                    results['invariant_violations'].append({
-                        'txid': str(txid),
-                        'issue': 'Credit/debit mismatch',
-                        'credit_sum': credit_sum,
-                        'debit_sum': debit_sum
-                    })
-            elif entries.count() > 2:
-                # Complex transaction - verify total credits = total debits
-                credit_sum = entries.filter(entry_type='credit').aggregate(
-                    total=Sum('amount')
-                )['total'] or Decimal('0.00')
-                
-                debit_sum = entries.filter(entry_type='debit').aggregate(
-                    total=Sum('amount')
-                )['total'] or Decimal('0.00')
-                
-                if credit_sum != debit_sum:
-                    results['invariant_violations'].append({
-                        'txid': str(txid),
-                        'issue': 'Complex transaction imbalance',
-                        'credit_sum': credit_sum,
-                        'debit_sum': debit_sum,
-                        'entry_count': entries.count()
-                    })
-            elif entries.count() == 1:
-                # Single entry - acceptable for deposits/withdrawals from external sources
+        if slot:
+            if selected_tour_type == 'virtual' and not slot.supports_virtual:
+                raise serializers.ValidationError("This slot does not support virtual tours")
+            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
+                raise serializers.ValidationError("This slot does not support onsite tours")
+        
+        return data
+
+    def validate_visitor_count(self, value):
+        if hasattr(self, 'initial_data') and 'slot' in self.initial_data:
+            try:
+                slot = VisitSlot.objects.get(id=self.initial_data['slot'])
+                if value > slot.available_capacity:
+                    raise serializers.ValidationError(
+                        f"Visitor count exceeds available capacity ({slot.available_capacity})"
+                    )
+            except VisitSlot.DoesNotExist:
                 pass
         
-        return results
+        return value
+
+    def create(self, validated_data):
+        # Set buyer to current user
+        validated_data['buyer'] = self.context['request'].user
+        
+        # Set fee amount from slot if applicable
+        slot = validated_data['slot']
+        if slot.fee_amount:
+            validated_data['fee_amount'] = slot.fee_amount
+            validated_data['currency'] = slot.currency
+        
+        return super().create(validated_data)
+
+
+class VisitCreateSerializer(serializers.ModelSerializer):
+    """Simplified serializer for creating visits"""
     
-    @staticmethod
-    def get_wallet_statement(
-        wallet: Wallet,
-        start_date: Optional[timezone.datetime] = None,
-        end_date: Optional[timezone.datetime] = None,
-        limit: int = 100
-    ) -> Dict[str, Any]:
-        """Generate wallet statement"""
+    class Meta:
+        model = Visit
+        fields = [
+            'slot', 'selected_tour_type', 'booking_intent', 'budget_range', 
+            'move_in_date', 'visitor_count', 'special_requests'
+        ]
+
+    def validate_slot(self, value):
+        # Check if user already has a visit for this slot
+        user = self.context['request'].user
+        if Visit.objects.filter(buyer=user, slot=value).exists():
+            raise serializers.ValidationError("You already have a visit booked for this slot")
         
-        queryset = wallet.ledger_entries.all()
+        # Check slot availability
+        if value.available_capacity < 1:
+            raise serializers.ValidationError("This time slot is fully booked")
         
-        if start_date:
-            queryset = queryset.filter(created_at__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(created_at__lte=end_date)
+        if value.start_at <= timezone.now():
+            raise serializers.ValidationError("Cannot book visits for past time slots")
         
-        entries = queryset.order_by('-created_at')[:limit]
+        return value
+    
+    def validate(self, data):
+        # Validate tour type compatibility
+        slot = data.get('slot')
+        selected_tour_type = data.get('selected_tour_type', 'onsite')
         
-        # Calculate running balance
-        statement_entries = []
-        running_balance = wallet.balance_cached
+        if slot:
+            if selected_tour_type == 'virtual' and not slot.supports_virtual:
+                raise serializers.ValidationError("This slot does not support virtual tours")
+            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
+                raise serializers.ValidationError("This slot does not support onsite tours")
         
-        for entry in entries:
-            if entry.entry_type == 'credit':
-                running_balance -= entry.amount  # Reverse for historical balance
-            else:
-                running_balance += entry.amount
-            
-            statement_entries.append({
-                'id': str(entry.id),
-                'date': entry.created_at,
-                'type': entry.entry_type,
-                'amount': entry.amount,
-                'description': entry.description,
-                'ref_type': entry.ref_type,
-                'balance_after': entry.balance_after,
-                'txid': str(entry.txid)
-            })
-        
-        # Reverse to show chronological order
-        statement_entries.reverse()
-        
+        return data
+
+
+class VisitCheckinSerializer(serializers.Serializer):
+    """Serializer for visit check-in"""
+    
+    checkin_code = serializers.CharField(max_length=8)
+    location = serializers.JSONField(required=False)
+    proof_photo = serializers.ImageField(required=False)
+
+    def validate_checkin_code(self, value):
+        visit = self.context['visit']
+        if visit.checkin_code != value.upper():
+            raise serializers.ValidationError("Invalid check-in code")
+        return value.upper()
+
+
+class VirtualTourAccessSerializer(serializers.Serializer):
+    """Serializer for virtual tour access"""
+    
+    duration_seconds = serializers.IntegerField(required=False, min_value=1)
+class VisitFeedbackSerializer(serializers.Serializer):
+    """Serializer for visit feedback"""
+    
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    feedback = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+
+
+class DirectBookingInquiryCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating booking inquiries"""
+    
+    class Meta:
+        model = DirectBookingInquiry
+        fields = [
+            'offered_amount', 'currency', 'proposed_terms', 'buyer_message', 'expires_at'
+        ]
+    
+    def validate_offered_amount(self, value):
+        if value and value <= 0:
+            raise serializers.ValidationError("Offered amount must be positive")
+        return value
+class VisitReminderTaskSerializer(serializers.ModelSerializer):
+    visit_details = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = VisitReminderTask
+        fields = [
+            'id', 'visit', 'visit_details', 'reminder_type', 'scheduled_at',
+            'sent_at', 'is_sent', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+    def get_visit_details(self, obj):
         return {
-            'wallet_id': str(wallet.id),
-            'owner': wallet.get_owner_display(),
-            'current_balance': wallet.balance_cached,
-            'currency': wallet.currency,
-            'statement_period': {
-                'start': start_date,
-                'end': end_date
-            },
-            'entries': statement_entries,
-            'entry_count': len(statement_entries)
+            'id': str(obj.visit.id),
+            'listing_title': obj.visit.listing.title,
+            'buyer_username': obj.visit.buyer.username,
+            'slot_time': obj.visit.slot.start_at,
+            'tour_type': obj.visit.selected_tour_type
         }
-
-
-class EscrowWalletService:
-    """Service for escrow wallet operations"""
-    
-    @staticmethod
-    def get_or_create_escrow_wallet(currency: str = 'USD') -> Wallet:
-        """Get or create system escrow wallet"""
-        wallet, created = Wallet.objects.get_or_create(
-            wallet_type='escrow',
-            currency=currency,
-            defaults={
-                'metadata': {'purpose': 'escrow_holding'}
-            }
-        )
-        return wallet
-    
-    @staticmethod
-    @transaction.atomic
-    def hold_escrow_funds(
-        buyer_wallet: Wallet,
-        amount: Decimal,
-        reservation_id: str,
-        description: str = "Escrow hold"
-    ) -> Tuple[LedgerEntry, LedgerEntry]:
-        """Move funds from buyer wallet to escrow"""
-        
-        escrow_wallet = EscrowWalletService.get_or_create_escrow_wallet(buyer_wallet.currency)
-        
-        return WalletService.transfer_funds(
-            from_wallet=buyer_wallet,
-            to_wallet=escrow_wallet,
-            amount=amount,
-            description=description,
-            ref_type='reservation',
-            ref_id=reservation_id,
-            metadata={'escrow_action': 'hold', 'reservation_id': reservation_id}
-        )
-    
-    @staticmethod
-    @transaction.atomic
-    def release_escrow_funds(
-        seller_wallet: Wallet,
-        amount: Decimal,
-        reservation_id: str,
-        description: str = "Escrow release"
-    ) -> Tuple[LedgerEntry, LedgerEntry]:
-        """Release funds from escrow to seller"""
-        
-        escrow_wallet = EscrowWalletService.get_or_create_escrow_wallet(seller_wallet.currency)
-        
-        return WalletService.transfer_funds(
-            from_wallet=escrow_wallet,
-            to_wallet=seller_wallet,
-            amount=amount,
-            description=description,
-            ref_type='reservation',
-            ref_id=reservation_id,
-            metadata={'escrow_action': 'release', 'reservation_id': reservation_id}
-        )
-    
-    @staticmethod
-    @transaction.atomic
-    def refund_escrow_funds(
-        buyer_wallet: Wallet,
-        amount: Decimal,
-        reservation_id: str,
-        description: str = "Escrow refund"
-    ) -> Tuple[LedgerEntry, LedgerEntry]:
-        """Refund funds from escrow to buyer"""
-        
-        escrow_wallet = EscrowWalletService.get_or_create_escrow_wallet(buyer_wallet.currency)
-        
-        return WalletService.transfer_funds(
-            from_wallet=escrow_wallet,
-            to_wallet=buyer_wallet,
-            amount=amount,
-            description=description,
-            ref_type='reservation',
-            ref_id=reservation_id,
-            metadata={'escrow_action': 'refund', 'reservation_id': reservation_id}
-        )
