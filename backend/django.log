@@ -7,3 +7,387 @@ Watching for file changes with StatReloader
 C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\visits\models.py changed, reloading.
 Watching for file changes with StatReloader
 Watching for file changes with StatReloader
+Watching for file changes with StatReloader
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110993
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 5076
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 111109
+Not Found: /favicon.ico
+"GET /favicon.ico HTTP/1.1" 404 5076
+Watching for file changes with StatReloader
+Internal Server Error: /
+Traceback (most recent call last):
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\backend\views.py", line 95, in api_root
+    return render(request, 'backend/api_root.html', context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 61, in render_to_string
+    template = get_template(template_name, using=using)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jack Mwisa\Documents\GitHub\realestate\Real-Estate-Plot-Rervervation-backend\backend\venv\Lib\site-packages\django\template\loader.py", line 19, in get_template
+    raise TemplateDoesNotExist(template_name, chain=chain)
+django.template.exceptions.TemplateDoesNotExist: backend/api_root.html
+"GET / HTTP/1.1" 500 110981
