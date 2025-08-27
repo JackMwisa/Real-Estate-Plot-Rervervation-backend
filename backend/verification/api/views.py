@@ -5,6 +5,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db import transaction
+from rest_framework import serializers
 
 from listings.models import Listing
 from ..models import VerificationCase, VerificationDocument, VerificationOutcome, VerificationTemplate
@@ -373,4 +374,65 @@ def user_verification_status(request):
     }
     
     serializer = ListingVerificationStatusSerializer(data)
-    return Response(serializer.data)
+    return Response(serializer.data)\
+        
+        
+        
+        
+class UserVerifyView(generics.CreateAPIView):
+    """
+    POST /api/verification/user/verify/
+    Start a USER verification case for the current user.
+    """
+    serializer_class = VerificationCaseCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        # prevent duplicate pending cases
+        existing = VerificationCase.objects.filter(
+            user=user,
+            case_type='user',
+            status__in=['submitted', 'under_review', 'needs_more_info'],
+        ).first()
+        if existing:
+            raise serializers.ValidationError("You already have a pending user verification case.")
+
+        serializer.save(
+            user=user,
+            case_type='user',
+            listing=None,
+        )
+
+
+class AgencyVerifyView(generics.CreateAPIView):
+    """
+    POST /api/verification/agency/verify/
+    Start an AGENCY verification case for the current user.
+    """
+    serializer_class = VerificationCaseCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        # OPTIONAL: check user has an agency profile. Keep as a soft guard.
+        # If you have a concrete profile model/field, adjust this check.
+        if not hasattr(user, 'profile') or not getattr(user.profile, 'agency_name', None):
+            raise serializers.ValidationError("You must have an agency profile before verifying your agency.")
+
+        # prevent duplicate pending cases
+        existing = VerificationCase.objects.filter(
+            user=user,
+            case_type='agency',
+            status__in=['submitted', 'under_review', 'needs_more_info'],
+        ).first()
+        if existing:
+            raise serializers.ValidationError("You already have a pending agency verification case.")
+
+        serializer.save(
+            user=user,
+            case_type='agency',
+            listing=None,
+        )
