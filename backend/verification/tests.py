@@ -348,3 +348,104 @@ class VerificationAPITests(APITestCase):
         
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_user_verification_submission(self):
+        self.client.force_authenticate(user=self.user)
+        
+        url = reverse('user-verify')
+        data = {
+            'submission_notes': 'Please verify my identity',
+            'priority': 'normal'
+        }
+        
+        response = self.client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Check that verification case was created
+        case = VerificationCase.objects.get(user=self.user, case_type='user')
+        self.assertEqual(case.status, 'submitted')
+
+    def test_agency_verification_submission(self):
+        # First set up agency profile
+        self.user.profile.agency_name = 'Test Real Estate Agency'
+        self.user.profile.save()
+        
+        self.client.force_authenticate(user=self.user)
+        
+        url = reverse('agency-verify')
+        data = {
+            'submission_notes': 'Please verify my agency',
+            'priority': 'normal'
+        }
+        
+        response = self.client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Check that verification case was created
+        case = VerificationCase.objects.get(user=self.user, case_type='agency')
+        self.assertEqual(case.status, 'submitted')
+
+    def test_agency_verification_without_agency_profile(self):
+        self.client.force_authenticate(user=self.user)
+        
+        url = reverse('agency-verify')
+        data = {
+            'submission_notes': 'Please verify my agency',
+            'priority': 'normal'
+        }
+        
+        response = self.client.post(url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('agency profile', response.data['non_field_errors'][0])
+    def test_user_verification_status(self):
+        self.client.force_authenticate(user=self.user)
+        
+        # Test without verification case
+        url = reverse('user-verification-status')
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['is_verified'])
+        self.assertEqual(response.data['verification_status'], 'not_submitted')
+        
+        # Create a verified case
+        case = VerificationCase.objects.create(
+            case_type='user',
+            user=self.user,
+            status='verified'
+        )
+        
+        VerificationOutcome.objects.create(
+            verification_case=case,
+            outcome='verified',
+            reason='Identity verified',
+            decided_by=self.staff_user
+        )
+        
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['is_verified'])
+        self.assertEqual(response.data['verification_status'], 'verified')
+    def test_agency_verification_status(self):
+        self.client.force_authenticate(user=self.user)
+        
+        # Test without agency profile
+        url = reverse('agency-verification-status')
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data['has_agency'])
+        self.assertEqual(response.data['verification_status'], 'no_agency')
+        
+        # Add agency profile
+        self.user.profile.agency_name = 'Test Agency'
+        self.user.profile.save()
+        
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['has_agency'])
+        self.assertEqual(response.data['verification_status'], 'not_submitted')

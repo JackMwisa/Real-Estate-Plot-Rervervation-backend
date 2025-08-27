@@ -264,6 +264,68 @@ def listing_verification_status(request, listing_id):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+def agency_verification_status(request):
+    """
+    GET /api/verification/agency-status/
+    Get agency verification status for current user
+    """
+    user = request.user
+    
+    # Check if user has an agency profile
+    if not hasattr(user, 'profile') or not user.profile.agency_name:
+        return Response({
+            'has_agency': False,
+            'is_verified': False,
+            'verification_status': 'no_agency',
+            'verification_date': None,
+            'verification_expires': None,
+            'pending_case_id': None,
+            'can_apply': False
+        })
+    
+    # Get latest agency verification case
+    latest_case = VerificationCase.objects.filter(
+        user=user,
+        case_type='agency'
+    ).order_by('-created_at').first()
+    
+    is_verified = False
+    verification_status = 'not_submitted'
+    verification_date = None
+    verification_expires = None
+    pending_case_id = None
+    can_apply = True
+    
+    if latest_case:
+        if latest_case.status in ['submitted', 'under_review', 'needs_more_info']:
+            verification_status = latest_case.status
+            pending_case_id = latest_case.id
+            can_apply = False
+        elif latest_case.status == 'verified':
+            is_verified = True
+            verification_status = 'verified'
+            if hasattr(latest_case, 'outcome'):
+                verification_date = latest_case.outcome.decided_at
+                verification_expires = latest_case.outcome.valid_until
+                is_verified = latest_case.outcome.is_active
+        elif latest_case.status == 'rejected':
+            verification_status = 'rejected'
+            can_apply = True
+    
+    data = {
+        'has_agency': True,
+        'is_verified': is_verified,
+        'verification_status': verification_status,
+        'verification_date': verification_date,
+        'verification_expires': verification_expires,
+        'pending_case_id': pending_case_id,
+        'can_apply': can_apply
+    }
+    
+    serializer = ListingVerificationStatusSerializer(data)
+    return Response(serializer.data)
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
 def user_verification_status(request):
     """
     GET /api/verification/user-status/
