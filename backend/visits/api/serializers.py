@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from ..models import VisitSlot, Visit, VisitReminderTask
+from ..models import VisitSlot, Visit, VisitReminderTask, DirectBookingInquiry
 
 User = get_user_model()
 
@@ -16,10 +16,10 @@ class VisitSlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = VisitSlot
         fields = [
-            'id', 'listing', 'listing_title', 'agent', 'agent_username',
+            'tour_type', 'virtual_tour_url', 'meeting_location',
             'start_at', 'end_at', 'capacity', 'available_capacity', 'is_full',
             'fee_amount', 'currency', 'is_active', 'notes', 'is_past',
-            'created_at', 'updated_at'
+            'supports_virtual', 'supports_onsite', 'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'agent', 'created_at', 'updated_at']
 
@@ -31,6 +31,13 @@ class VisitSlotSerializer(serializers.ModelSerializer):
             if data['start_at'] <= timezone.now():
                 raise serializers.ValidationError("Start time must be in the future")
         
+        # Validate virtual tour URL for virtual/hybrid tours
+        tour_type = data.get('tour_type')
+        virtual_tour_url = data.get('virtual_tour_url')
+        
+        if tour_type in ['virtual', 'hybrid'] and not virtual_tour_url:
+            raise serializers.ValidationError("Virtual tour URL is required for virtual/hybrid tours")
+        
         return data
 
     def create(self, validated_data):
@@ -39,28 +46,56 @@ class VisitSlotSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class DirectBookingInquirySerializer(serializers.ModelSerializer):
+    visit_details = serializers.SerializerMethodField()
+    listing_title = serializers.CharField(source='visit.listing.title', read_only=True)
+    buyer_username = serializers.CharField(source='visit.buyer.username', read_only=True)
+    is_expired = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = DirectBookingInquiry
+        fields = [
+            'id', 'visit', 'visit_details', 'listing_title', 'buyer_username',
+            'status', 'offered_amount', 'currency', 'proposed_terms',
+            'buyer_message', 'agent_response', 'is_expired',
+            'created_at', 'updated_at', 'responded_at', 'expires_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_visit_details(self, obj):
+        return {
+            'id': str(obj.visit.id),
+            'booking_intent': obj.visit.booking_intent,
+            'budget_range': obj.visit.budget_range,
+            'move_in_date': obj.visit.move_in_date,
+            'selected_tour_type': obj.visit.selected_tour_type
+        }
 class VisitSerializer(serializers.ModelSerializer):
     buyer_username = serializers.CharField(source='buyer.username', read_only=True)
     listing_title = serializers.CharField(source='listing.title', read_only=True)
     agent_username = serializers.CharField(source='slot.agent.username', read_only=True)
     slot_time = serializers.SerializerMethodField()
     can_checkin = serializers.ReadOnlyField()
+    can_access_virtual_tour = serializers.ReadOnlyField()
     is_past_due = serializers.ReadOnlyField()
+    booking_inquiry = DirectBookingInquirySerializer(read_only=True)
     
     class Meta:
         model = Visit
         fields = [
             'id', 'listing', 'listing_title', 'buyer', 'buyer_username',
-            'slot', 'slot_time', 'agent_username', 'status', 'visitor_count',
-            'special_requests', 'fee_amount', 'currency', 'fee_paid',
+            'slot', 'slot_time', 'agent_username', 'status', 
+            'selected_tour_type', 'booking_intent', 'budget_range', 'move_in_date',
+            'visitor_count', 'special_requests', 'fee_amount', 'currency', 'fee_paid',
             'payment_reference', 'checkin_code', 'checkin_at', 'checkin_location',
+            'virtual_tour_accessed_at', 'virtual_tour_duration',
             'proof_photo', 'buyer_rating', 'buyer_feedback', 'agent_notes',
-            'can_checkin', 'is_past_due', 'created_at', 'updated_at',
-            'confirmed_at', 'completed_at'
+            'can_checkin', 'can_access_virtual_tour', 'is_past_due', 
+            'booking_inquiry', 'created_at', 'updated_at', 'confirmed_at', 'completed_at'
         ]
         read_only_fields = [
             'id', 'buyer', 'checkin_code', 'checkin_at', 'created_at',
-            'updated_at', 'confirmed_at', 'completed_at'
+            'updated_at', 'confirmed_at', 'completed_at', 'virtual_tour_accessed_at'
         ]
 
     def get_slot_time(self, obj):
@@ -79,6 +114,19 @@ class VisitSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Cannot book visits for past time slots")
         
         return value
+    
+    def validate(self, data):
+        # Validate tour type compatibility with slot
+        slot = data.get('slot')
+        selected_tour_type = data.get('selected_tour_type', 'onsite')
+        
+        if slot:
+            if selected_tour_type == 'virtual' and not slot.supports_virtual:
+                raise serializers.ValidationError("This slot does not support virtual tours")
+            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
+                raise serializers.ValidationError("This slot does not support onsite tours")
+        
+        return data
 
     def validate_visitor_count(self, value):
         if hasattr(self, 'initial_data') and 'slot' in self.initial_data:
@@ -112,7 +160,8 @@ class VisitCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Visit
         fields = [
-            'slot', 'visitor_count', 'special_requests'
+            'slot', 'selected_tour_type', 'booking_intent', 'budget_range', 
+            'move_in_date', 'visitor_count', 'special_requests'
         ]
 
     def validate_slot(self, value):
@@ -129,6 +178,19 @@ class VisitCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Cannot book visits for past time slots")
         
         return value
+    
+    def validate(self, data):
+        # Validate tour type compatibility
+        slot = data.get('slot')
+        selected_tour_type = data.get('selected_tour_type', 'onsite')
+        
+        if slot:
+            if selected_tour_type == 'virtual' and not slot.supports_virtual:
+                raise serializers.ValidationError("This slot does not support virtual tours")
+            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
+                raise serializers.ValidationError("This slot does not support onsite tours")
+        
+        return data
 
 
 class VisitCheckinSerializer(serializers.Serializer):
@@ -145,6 +207,10 @@ class VisitCheckinSerializer(serializers.Serializer):
         return value.upper()
 
 
+class VirtualTourAccessSerializer(serializers.Serializer):
+    """Serializer for virtual tour access"""
+    
+    duration_seconds = serializers.IntegerField(required=False, min_value=1)
 class VisitFeedbackSerializer(serializers.Serializer):
     """Serializer for visit feedback"""
     
@@ -152,6 +218,19 @@ class VisitFeedbackSerializer(serializers.Serializer):
     feedback = serializers.CharField(max_length=1000, required=False, allow_blank=True)
 
 
+class DirectBookingInquiryCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating booking inquiries"""
+    
+    class Meta:
+        model = DirectBookingInquiry
+        fields = [
+            'offered_amount', 'currency', 'proposed_terms', 'buyer_message', 'expires_at'
+        ]
+    
+    def validate_offered_amount(self, value):
+        if value and value <= 0:
+            raise serializers.ValidationError("Offered amount must be positive")
+        return value
 class VisitReminderTaskSerializer(serializers.ModelSerializer):
     visit_details = serializers.SerializerMethodField()
     
@@ -170,3 +249,4 @@ class VisitReminderTaskSerializer(serializers.ModelSerializer):
             'buyer_username': obj.visit.buyer.username,
             'slot_time': obj.visit.slot.start_at
         }
+            'tour_type': obj.visit.selected_tour_type
