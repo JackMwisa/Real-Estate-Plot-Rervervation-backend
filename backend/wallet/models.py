@@ -1,539 +1,252 @@
-from django.db import models
-from django.conf import settings
+from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator
 from django.utils import timezone
-from decimal import Decimal
-import uuid
+from ..models import VisitSlot, Visit, VisitReminderTask, DirectBookingInquiry
 
 User = get_user_model()
 
 
-class Wallet(models.Model):
-    """User/Agency wallet for holding funds"""
+class VisitSlotSerializer(serializers.ModelSerializer):
+    agent_username = serializers.CharField(source='agent.username', read_only=True)
+    listing_title = serializers.CharField(source='listing.title', read_only=True)
+    available_capacity = serializers.ReadOnlyField()
+    is_full = serializers.ReadOnlyField()
+    is_past = serializers.ReadOnlyField()
     
-    WALLET_TYPE_CHOICES = [
-        ('user', 'User Wallet'),
-        ('agency', 'Agency Wallet'),
-        ('escrow', 'Escrow Wallet'),
-        ('system', 'System Wallet'),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
-    # Owner (can be User or Agency profile)
-    owner_user = models.OneToOneField(
-        User, 
-        on_delete=models.CASCADE, 
-        null=True, 
-        blank=True,
-        related_name='wallet'
-    )
-    owner_agency = models.OneToOneField(
-        'users.Profile',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='agency_wallet'
-    )
-    
-    wallet_type = models.CharField(max_length=10, choices=WALLET_TYPE_CHOICES, default='user')
-    
-    # Cached balance (updated by ledger entries)
-    balance_cached = models.DecimalField(
-        max_digits=15, 
-        decimal_places=2, 
-        default=Decimal('0.00')
-    )
-    currency = models.CharField(max_length=3, default='USD')
-    
-    # Status and limits
-    is_active = models.BooleanField(default=True)
-    daily_limit = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        null=True, 
-        blank=True,
-        help_text="Daily transaction limit"
-    )
-    monthly_limit = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2, 
-        null=True, 
-        blank=True,
-        help_text="Monthly transaction limit"
-    )
-    
-    # Metadata
-    metadata = models.JSONField(default=dict, blank=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    last_activity_at = models.DateTimeField(null=True, blank=True)
-
     class Meta:
-        indexes = [
-            models.Index(fields=['wallet_type', 'is_active']),
-            models.Index(fields=['currency']),
+        model = VisitSlot
+        fields = [
+            'tour_type', 'virtual_tour_url', 'meeting_location',
+            'start_at', 'end_at', 'capacity', 'available_capacity', 'is_full',
+            'fee_amount', 'currency', 'is_active', 'notes', 'is_past',
+            'supports_virtual', 'supports_onsite', 'created_at', 'updated_at'
         ]
+        read_only_fields = ['id', 'agent', 'created_at', 'updated_at']
 
-    def __str__(self):
-        owner = self.get_owner_display()
-        return f"{owner} Wallet ({self.currency} {self.balance_cached})"
-
-    def get_owner_display(self):
-        if self.owner_user:
-            return self.owner_user.username
-        elif self.owner_agency:
-            return self.owner_agency.agency_name or f"Agency {self.owner_agency.id}"
-        return f"System Wallet {self.id}"
-
-    def get_owner(self):
-        """Get the actual owner object"""
-        return self.owner_user or self.owner_agency
-
-    @property
-    def calculated_balance(self):
-        """Calculate balance from ledger entries"""
-        from django.db.models import Sum, Q
-        
-        credits = self.ledger_entries.filter(
-            entry_type='credit'
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        
-        debits = self.ledger_entries.filter(
-            entry_type='debit'
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        
-        return credits - debits
-
-    def refresh_balance(self):
-        """Recalculate and update cached balance"""
-        self.balance_cached = self.calculated_balance
-        self.last_activity_at = timezone.now()
-        self.save(update_fields=['balance_cached', 'last_activity_at', 'updated_at'])
-
-    def can_debit(self, amount: Decimal) -> tuple[bool, str]:
-        """Check if wallet can be debited for given amount"""
-        if not self.is_active:
-            return False, "Wallet is inactive"
-        
-        if amount <= 0:
-            return False, "Amount must be positive"
-        
-        if self.balance_cached < amount:
-            return False, "Insufficient balance"
-        
-        # Check daily limit
-        if self.daily_limit:
-            from datetime import timedelta
-            today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            today_debits = self.ledger_entries.filter(
-                entry_type='debit',
-                created_at__gte=today_start
-            ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+    def validate(self, data):
+        if data.get('start_at') and data.get('end_at'):
+            if data['start_at'] >= data['end_at']:
+                raise serializers.ValidationError("End time must be after start time")
             
-            if today_debits + amount > self.daily_limit:
-                return False, f"Daily limit exceeded ({self.daily_limit} {self.currency})"
+            if data['start_at'] <= timezone.now():
+                raise serializers.ValidationError("Start time must be in the future")
         
-        return True, ""
+        # Validate virtual tour URL for virtual/hybrid tours
+        tour_type = data.get('tour_type')
+        virtual_tour_url = data.get('virtual_tour_url')
+        
+        if tour_type in ['virtual', 'hybrid'] and not virtual_tour_url:
+            raise serializers.ValidationError("Virtual tour URL is required for virtual/hybrid tours")
+        
+        return data
+
+    def create(self, validated_data):
+        # Set agent to current user
+        validated_data['agent'] = self.context['request'].user
+        return super().create(validated_data)
 
 
-class LedgerEntry(models.Model):
-    """Double-entry ledger for all wallet transactions"""
+class DirectBookingInquirySerializer(serializers.ModelSerializer):
+    visit_details = serializers.SerializerMethodField()
+    listing_title = serializers.CharField(source='visit.listing.title', read_only=True)
+    buyer_username = serializers.CharField(source='visit.buyer.username', read_only=True)
+    is_expired = serializers.ReadOnlyField()
     
-    ENTRY_TYPE_CHOICES = [
-        ('credit', 'Credit'),
-        ('debit', 'Debit'),
-    ]
-    
-    REF_TYPE_CHOICES = [
-        ('payment', 'Payment'),
-        ('reservation', 'Reservation'),
-        ('payout', 'Payout'),
-        ('commission', 'Commission'),
-        ('refund', 'Refund'),
-        ('fee', 'Fee'),
-        ('adjustment', 'Manual Adjustment'),
-        ('transfer', 'Wallet Transfer'),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='ledger_entries')
-    
-    # Entry details
-    entry_type = models.CharField(max_length=10, choices=ENTRY_TYPE_CHOICES)
-    amount = models.DecimalField(
-        max_digits=15, 
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]
-    )
-    currency = models.CharField(max_length=3)
-    
-    # Reference to source transaction
-    ref_type = models.CharField(max_length=20, choices=REF_TYPE_CHOICES)
-    ref_id = models.CharField(max_length=128, help_text="ID of the referenced object")
-    
-    # Transaction grouping (for double-entry pairs)
-    txid = models.UUIDField(default=uuid.uuid4, help_text="Transaction ID for grouping related entries")
-    
-    # Description and metadata
-    description = models.CharField(max_length=500)
-    metadata = models.JSONField(default=dict, blank=True)
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='created_ledger_entries'
-    )
-
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['wallet', 'created_at']),
-            models.Index(fields=['ref_type', 'ref_id']),
-            models.Index(fields=['txid']),
-            models.Index(fields=['entry_type', 'created_at']),
+        model = DirectBookingInquiry
+        fields = [
+            'id', 'visit', 'visit_details', 'listing_title', 'buyer_username',
+            'status', 'offered_amount', 'currency', 'proposed_terms',
+            'buyer_message', 'agent_response', 'is_expired',
+            'created_at', 'updated_at', 'responded_at', 'expires_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_visit_details(self, obj):
+        return {
+            'id': str(obj.visit.id),
+            'booking_intent': obj.visit.booking_intent,
+            'budget_range': obj.visit.budget_range,
+            'move_in_date': obj.visit.move_in_date,
+            'selected_tour_type': obj.visit.selected_tour_type
+        }
+class VisitSerializer(serializers.ModelSerializer):
+    buyer_username = serializers.CharField(source='buyer.username', read_only=True)
+    listing_title = serializers.CharField(source='listing.title', read_only=True)
+    agent_username = serializers.CharField(source='slot.agent.username', read_only=True)
+    slot_time = serializers.SerializerMethodField()
+    can_checkin = serializers.ReadOnlyField()
+    can_access_virtual_tour = serializers.ReadOnlyField()
+    is_past_due = serializers.ReadOnlyField()
+    booking_inquiry = DirectBookingInquirySerializer(read_only=True)
+    
+    class Meta:
+        model = Visit
+        fields = [
+            'id', 'listing', 'listing_title', 'buyer', 'buyer_username',
+            'slot', 'slot_time', 'agent_username', 'status', 
+            'selected_tour_type', 'booking_intent', 'budget_range', 'move_in_date',
+            'visitor_count', 'special_requests', 'fee_amount', 'currency', 'fee_paid',
+            'payment_reference', 'checkin_code', 'checkin_at', 'checkin_location',
+            'virtual_tour_accessed_at', 'virtual_tour_duration',
+            'proof_photo', 'buyer_rating', 'buyer_feedback', 'agent_notes',
+            'can_checkin', 'can_access_virtual_tour', 'is_past_due', 
+            'booking_inquiry', 'created_at', 'updated_at', 'confirmed_at', 'completed_at'
+        ]
+        read_only_fields = [
+            'id', 'buyer', 'checkin_code', 'checkin_at', 'created_at',
+            'updated_at', 'confirmed_at', 'completed_at', 'virtual_tour_accessed_at'
         ]
 
-    def __str__(self):
-        return f"{self.get_entry_type_display()} {self.amount} {self.currency} - {self.description}"
+    def get_slot_time(self, obj):
+        return {
+            'start_at': obj.slot.start_at,
+            'end_at': obj.slot.end_at
+        }
 
-    @property
-    def balance_after(self):
-        """Calculate wallet balance after this entry"""
-        # Get all entries up to this one
-        entries_before = LedgerEntry.objects.filter(
-            wallet=self.wallet,
-            created_at__lte=self.created_at,
-            id__lte=self.id
-        ).order_by('created_at', 'id')
+    def validate_slot(self, value):
+        # Check if slot has available capacity
+        if value.available_capacity < 1:
+            raise serializers.ValidationError("This time slot is fully booked")
         
-        balance = Decimal('0.00')
-        for entry in entries_before:
-            if entry.entry_type == 'credit':
-                balance += entry.amount
-            else:
-                balance -= entry.amount
+        # Check if slot is in the future
+        if value.start_at <= timezone.now():
+            raise serializers.ValidationError("Cannot book visits for past time slots")
         
-        return balance
+        return value
+    
+    def validate(self, data):
+        # Validate tour type compatibility with slot
+        slot = data.get('slot')
+        selected_tour_type = data.get('selected_tour_type', 'onsite')
+        
+        if slot:
+            if selected_tour_type == 'virtual' and not slot.supports_virtual:
+                raise serializers.ValidationError("This slot does not support virtual tours")
+            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
+                raise serializers.ValidationError("This slot does not support onsite tours")
+        
+        return data
+
+    def validate_visitor_count(self, value):
+        if hasattr(self, 'initial_data') and 'slot' in self.initial_data:
+            try:
+                slot = VisitSlot.objects.get(id=self.initial_data['slot'])
+                if value > slot.available_capacity:
+                    raise serializers.ValidationError(
+                        f"Visitor count exceeds available capacity ({slot.available_capacity})"
+                    )
+            except VisitSlot.DoesNotExist:
+                pass
+        
+        return value
+
+    def create(self, validated_data):
+        # Set buyer to current user
+        validated_data['buyer'] = self.context['request'].user
+        
+        # Set fee amount from slot if applicable
+        slot = validated_data['slot']
+        if slot.fee_amount:
+            validated_data['fee_amount'] = slot.fee_amount
+            validated_data['currency'] = slot.currency
+        
+        return super().create(validated_data)
 
 
-class Beneficiary(models.Model):
-    """Payout beneficiary information with KYC"""
+class VisitCreateSerializer(serializers.ModelSerializer):
+    """Simplified serializer for creating visits"""
     
-    PAYOUT_METHOD_CHOICES = [
-        ('bank_transfer', 'Bank Transfer'),
-        ('mobile_money', 'Mobile Money'),
-        ('paypal', 'PayPal'),
-        ('crypto', 'Cryptocurrency'),
-    ]
-    
-    KYC_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('verified', 'Verified'),
-        ('rejected', 'Rejected'),
-        ('expired', 'Expired'),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='beneficiaries')
-    
-    # Beneficiary details
-    name = models.CharField(max_length=200)
-    email = models.EmailField(blank=True)
-    phone_number = models.CharField(max_length=25, blank=True)
-    
-    # KYC information
-    kyc_status = models.CharField(max_length=20, choices=KYC_STATUS_CHOICES, default='pending')
-    kyc_documents = models.JSONField(default=dict, blank=True)
-    kyc_verified_at = models.DateTimeField(null=True, blank=True)
-    kyc_verified_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='verified_beneficiaries'
-    )
-    
-    # Payout method configuration
-    payout_method = models.CharField(max_length=20, choices=PAYOUT_METHOD_CHOICES)
-    payout_details = models.JSONField(
-        default=dict,
-        help_text="Method-specific details (account numbers, addresses, etc.)"
-    )
-    
-    # Status
-    is_active = models.BooleanField(default=True)
-    is_default = models.BooleanField(default=False)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
-        ordering = ['-is_default', '-created_at']
-        indexes = [
-            models.Index(fields=['owner', 'is_active']),
-            models.Index(fields=['kyc_status']),
+        model = Visit
+        fields = [
+            'slot', 'selected_tour_type', 'booking_intent', 'budget_range', 
+            'move_in_date', 'visitor_count', 'special_requests'
         ]
 
-    def __str__(self):
-        return f"{self.name} ({self.get_payout_method_display()}) - {self.get_kyc_status_display()}"
-
-    @property
-    def can_receive_payouts(self):
-        return self.is_active and self.kyc_status == 'verified'
-
-    def save(self, *args, **kwargs):
-        # Ensure only one default beneficiary per owner
-        if self.is_default:
-            Beneficiary.objects.filter(
-                owner=self.owner,
-                is_default=True
-            ).exclude(id=self.id).update(is_default=False)
+    def validate_slot(self, value):
+        # Check if user already has a visit for this slot
+        user = self.context['request'].user
+        if Visit.objects.filter(buyer=user, slot=value).exists():
+            raise serializers.ValidationError("You already have a visit booked for this slot")
         
-        super().save(*args, **kwargs)
+        # Check slot availability
+        if value.available_capacity < 1:
+            raise serializers.ValidationError("This time slot is fully booked")
+        
+        if value.start_at <= timezone.now():
+            raise serializers.ValidationError("Cannot book visits for past time slots")
+        
+        return value
+    
+    def validate(self, data):
+        # Validate tour type compatibility
+        slot = data.get('slot')
+        selected_tour_type = data.get('selected_tour_type', 'onsite')
+        
+        if slot:
+            if selected_tour_type == 'virtual' and not slot.supports_virtual:
+                raise serializers.ValidationError("This slot does not support virtual tours")
+            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
+                raise serializers.ValidationError("This slot does not support onsite tours")
+        
+        return data
 
 
-class Payout(models.Model):
-    """Payout requests and processing"""
+class VisitCheckinSerializer(serializers.Serializer):
+    """Serializer for visit check-in"""
     
-    STATUS_CHOICES = [
-        ('queued', 'Queued'),
-        ('processing', 'Processing'),
-        ('paid', 'Paid'),
-        ('failed', 'Failed'),
-        ('cancelled', 'Cancelled'),
-    ]
+    checkin_code = serializers.CharField(max_length=8)
+    location = serializers.JSONField(required=False)
+    proof_photo = serializers.ImageField(required=False)
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='payouts')
-    beneficiary = models.ForeignKey(Beneficiary, on_delete=models.PROTECT, related_name='payouts')
-    
-    # Payout details
-    amount = models.DecimalField(
-        max_digits=12, 
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]
-    )
-    currency = models.CharField(max_length=3)
-    fee_amount = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2, 
-        default=Decimal('0.00')
-    )
-    net_amount = models.DecimalField(max_digits=12, decimal_places=2)
-    
-    # Status and processing
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='queued')
-    provider_ref = models.CharField(max_length=128, blank=True)
-    failure_reason = models.TextField(blank=True)
-    
-    # Approval workflow
-    requires_approval = models.BooleanField(default=False)
-    approved_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='approved_payouts'
-    )
-    approved_at = models.DateTimeField(null=True, blank=True)
-    
-    # Processing timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    processed_at = models.DateTimeField(null=True, blank=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    
-    # Metadata
-    metadata = models.JSONField(default=dict, blank=True)
+    def validate_checkin_code(self, value):
+        visit = self.context['visit']
+        if visit.checkin_code != value.upper():
+            raise serializers.ValidationError("Invalid check-in code")
+        return value.upper()
 
+
+class VirtualTourAccessSerializer(serializers.Serializer):
+    """Serializer for virtual tour access"""
+    
+    duration_seconds = serializers.IntegerField(required=False, min_value=1)
+class VisitFeedbackSerializer(serializers.Serializer):
+    """Serializer for visit feedback"""
+    
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    feedback = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+
+
+class DirectBookingInquiryCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating booking inquiries"""
+    
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['wallet', 'status']),
-            models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['beneficiary']),
+        model = DirectBookingInquiry
+        fields = [
+            'offered_amount', 'currency', 'proposed_terms', 'buyer_message', 'expires_at'
         ]
-
-    def __str__(self):
-        return f"Payout {self.amount} {self.currency} to {self.beneficiary.name} ({self.get_status_display()})"
-
-    @property
-    def can_be_cancelled(self):
-        return self.status in ['queued', 'processing']
-
-    @property
-    def is_completed(self):
-        return self.status in ['paid', 'failed', 'cancelled']
-
-    def save(self, *args, **kwargs):
-        # Calculate net amount
-        self.net_amount = self.amount - self.fee_amount
-        super().save(*args, **kwargs)
-
-
-class WalletTransaction(models.Model):
-    """High-level wallet transactions (groups of ledger entries)"""
     
-    TRANSACTION_TYPE_CHOICES = [
-        ('deposit', 'Deposit'),
-        ('withdrawal', 'Withdrawal'),
-        ('transfer', 'Transfer'),
-        ('payment', 'Payment'),
-        ('refund', 'Refund'),
-        ('commission', 'Commission'),
-        ('fee', 'Fee'),
-        ('adjustment', 'Adjustment'),
-    ]
+    def validate_offered_amount(self, value):
+        if value and value <= 0:
+            raise serializers.ValidationError("Offered amount must be positive")
+        return value
+class VisitReminderTaskSerializer(serializers.ModelSerializer):
+    visit_details = serializers.SerializerMethodField()
     
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed'),
-        ('cancelled', 'Cancelled'),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
-    # Transaction details
-    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPE_CHOICES)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
-    # Involved wallets
-    from_wallet = models.ForeignKey(
-        Wallet, 
-        on_delete=models.CASCADE, 
-        null=True, 
-        blank=True,
-        related_name='outgoing_transactions'
-    )
-    to_wallet = models.ForeignKey(
-        Wallet, 
-        on_delete=models.CASCADE, 
-        null=True, 
-        blank=True,
-        related_name='incoming_transactions'
-    )
-    
-    # Amount and currency
-    amount = models.DecimalField(
-        max_digits=15, 
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]
-    )
-    currency = models.CharField(max_length=3)
-    
-    # Reference and description
-    reference = models.CharField(max_length=128, unique=True)
-    description = models.CharField(max_length=500)
-    
-    # External references
-    external_ref = models.CharField(max_length=128, blank=True)
-    related_object_type = models.CharField(max_length=50, blank=True)
-    related_object_id = models.CharField(max_length=128, blank=True)
-    
-    # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    
-    # Metadata
-    metadata = models.JSONField(default=dict, blank=True)
-
     class Meta:
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['from_wallet', 'status']),
-            models.Index(fields=['to_wallet', 'status']),
-            models.Index(fields=['transaction_type', 'status']),
-            models.Index(fields=['reference']),
-            models.Index(fields=['related_object_type', 'related_object_id']),
+        model = VisitReminderTask
+        fields = [
+            'id', 'visit', 'visit_details', 'reminder_type', 'scheduled_at',
+            'sent_at', 'is_sent', 'created_at'
         ]
+        read_only_fields = ['id', 'created_at']
 
-    def __str__(self):
-        return f"{self.get_transaction_type_display()} {self.amount} {self.currency} - {self.reference}"
-
-    @property
-    def is_transfer(self):
-        return self.from_wallet and self.to_wallet
-
-    @property
-    def net_change_for_wallet(self, wallet):
-        """Calculate net change for a specific wallet"""
-        if wallet == self.from_wallet:
-            return -self.amount
-        elif wallet == self.to_wallet:
-            return self.amount
-        return Decimal('0.00')
-
-
-class PayoutProvider(models.Model):
-    """Configuration for payout providers"""
-    
-    name = models.CharField(max_length=100)
-    code = models.CharField(max_length=20, unique=True)
-    
-    # Supported methods and currencies
-    supported_methods = models.JSONField(default=list)
-    supported_currencies = models.JSONField(default=list)
-    
-    # Fee structure
-    fee_structure = models.JSONField(
-        default=dict,
-        help_text="Fee calculation rules"
-    )
-    
-    # Limits
-    min_payout_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
-    max_payout_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    
-    # Configuration
-    api_config = models.JSONField(default=dict, blank=True)
-    is_active = models.BooleanField(default=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
-    def calculate_fee(self, amount: Decimal, method: str) -> Decimal:
-        """Calculate payout fee for given amount and method"""
-        fee_config = self.fee_structure.get(method, {})
-        
-        # Fixed fee
-        fixed_fee = Decimal(str(fee_config.get('fixed', 0)))
-        
-        # Percentage fee
-        percentage = Decimal(str(fee_config.get('percentage', 0)))
-        percentage_fee = amount * (percentage / 100)
-        
-        # Minimum fee
-        min_fee = Decimal(str(fee_config.get('min', 0)))
-        
-        # Maximum fee
-        max_fee = fee_config.get('max')
-        max_fee = Decimal(str(max_fee)) if max_fee else None
-        
-        total_fee = fixed_fee + percentage_fee
-        total_fee = max(total_fee, min_fee)
-        
-        if max_fee:
-            total_fee = min(total_fee, max_fee)
-        
-        return total_fee
-
-    def supports_method(self, method: str) -> bool:
-        return method in self.supported_methods
-
-    def supports_currency(self, currency: str) -> bool:
-        return currency in self.supported_currencies
+    def get_visit_details(self, obj):
+        return {
+            'id': str(obj.visit.id),
+            'listing_title': obj.visit.listing.title,
+            'buyer_username': obj.visit.buyer.username,
+            'slot_time': obj.visit.slot.start_at,
+            'tour_type': obj.visit.selected_tour_type
+        }
