@@ -17,70 +17,7 @@ class VisitSlotSerializer(serializers.ModelSerializer):
         model = VisitSlot
         fields = [
             'tour_type', 'virtual_tour_url', 'meeting_location',
-
-        if not reservation_id or provider not in ("flutterwave", "paypal"):
-            return Response({"detail": "Invalid payload"}, status=400)
-
-        try:
-            from bookings.models import Reservation
-            reservation = Reservation.objects.get(pk=reservation_id, buyer=user)
-        except Reservation.DoesNotExist:
-            return Response({"detail": "Reservation not found"}, status=404)
-
-        if reservation.escrow_state != 'initiated':
-            return Response({"detail": "Reservation not in correct state for payment"}, status=400)
-
-        amount = reservation.total_amount
-
-        payment = Payment.objects.create(
-            user=user,
-            listing=reservation.listing,
-            provider=provider,
-            amount=amount,
-            currency=currency,
-            status="pending",
-            meta={"reservation_id": str(reservation.id), "payment_type": "escrow"}
-        )
-
-        if provider == "flutterwave":
-            try:
-                init = init_flutterwave_payment(
-                    amount=amount,
-                    currency=currency,
-                    email=user.email or "user@example.com",
-                    redirect_url=f"{settings.BASE_URL}/bookings/{reservation.id}/payment-result/",
-                    meta={"payment_id": payment.id, "reservation_id": str(reservation.id)},
-                )
-                payment.tx_ref = init["tx_ref"]
-                payment.save(update_fields=["tx_ref"])
-                return Response({"redirect_url": init["link"], "payment_id": payment.id})
-            except Exception as e:
-                payment.status = "failed"
-                payment.save(update_fields=["status"])
-                return Response({"detail": f"Flutterwave error: {e}"}, status=400)
-
-        # PayPal
-        try:
-            order = create_order(amount=float(amount), currency=currency)
-            payment.paypal_order_id = order["id"]
-            payment.save(update_fields=["paypal_order_id"])
-            
-            # Handle escrow payment
-            if payment.meta.get("payment_type") == "escrow":
-                reservation_id = payment.meta.get("reservation_id")
-                if reservation_id:
-                    EscrowService.process_payment_webhook(reservation_id, {
-                        "status": "successful",
-                        "reference": str(tx_id),
-                        "payment_id": payment.id
-                    })
-            
-            return Response({"paypal_order_id": order["id"], "payment_id": payment.id})
-        except Exception as e:
-            payment.status = "failed"
-            payment.save(update_fields=["status"])
-            return Response({"detail": f"PayPal error: {e}"}, status=400)
-
+            'start_at', 'end_at', 'capacity', 'available_capacity', 'is_full',
             'fee_amount', 'currency', 'is_active', 'notes', 'is_past',
             'supports_virtual', 'supports_onsite', 'created_at', 'updated_at'
         ]
@@ -310,6 +247,6 @@ class VisitReminderTaskSerializer(serializers.ModelSerializer):
             'id': str(obj.visit.id),
             'listing_title': obj.visit.listing.title,
             'buyer_username': obj.visit.buyer.username,
-            'slot_time': obj.visit.slot.start_at
-        }
+            'slot_time': obj.visit.slot.start_at,
             'tour_type': obj.visit.selected_tour_type
+        }
