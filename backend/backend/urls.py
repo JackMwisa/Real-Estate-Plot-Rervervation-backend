@@ -43,6 +43,7 @@ urlpatterns = [
     path("api/notifications/", include("notifications.api.api_urls")),
     path('api/search/', include('search.api.urls')),
     path('api/verification/', include('verification.api.urls')),
+    path('api/ads/', include('ads.api.urls')),
     path('api/listings/<int:listing_id>/verify/', 
          include([
              path('', 'verification.api.views.ListingVerifyView.as_view(), name='listing-verify'),

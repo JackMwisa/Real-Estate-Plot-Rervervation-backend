@@ -9,6 +9,13 @@ from listings.models import Listing
 from users.models import Profile
 from .models import SearchEvent, SavedSearch
 
+# Import ad ranking service if ads are enabled
+try:
+    from ads.services import AdRankingService
+    ADS_AVAILABLE = True
+except ImportError:
+    ADS_AVAILABLE = False
+
 
 class SearchService:
     """Core search service with PostgreSQL backend"""
@@ -23,6 +30,7 @@ class SearchService:
             'media_richness': 0.1,
             'distance': 0.4
         })
+        self.ads_enabled = getattr(settings, 'ADS_ENABLED', False) and ADS_AVAILABLE
 
     def search(self, params: Dict[str, Any], user=None) -> Dict[str, Any]:
         """Main search method"""
@@ -44,6 +52,16 @@ class SearchService:
         
         results = queryset[offset:offset + page_size]
         
+        # Apply ad ranking boost if enabled
+        results_list = list(results.values())
+        if self.ads_enabled and results_list:
+            try:
+                ad_service = AdRankingService()
+                results_list = ad_service.apply_ranking_boost(results_list)
+            except Exception:
+                # Fail gracefully if ad ranking fails
+                pass
+        
         # Calculate timing
         took_ms = int((time.time() - start_time) * 1000)
         
@@ -51,7 +69,7 @@ class SearchService:
         self._log_search_event(params, total_count, took_ms, user)
         
         return {
-            'results': list(results.values()),
+            'results': results_list,
             'total_count': total_count,
             'page': page,
             'page_size': page_size,

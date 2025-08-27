@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "notifications",
     "search",
     "verification",
+    "ads",
 ]
 
 MIDDLEWARE = [
@@ -181,3 +182,10 @@ VERIFICATION_ALLOWED_FILE_TYPES = [
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 ]
+
+# Ads & Promotions Settings
+ADS_ENABLED = True
+ADS_RANK_BLEND_WEIGHTS = {
+    'organic_score': 0.7,
+    'boost_score': 0.3
+}
