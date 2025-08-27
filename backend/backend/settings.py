@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "verification",
     "ads",
     "visits",
+    "tours",
 ]
 
 MIDDLEWARE = [
@@ -193,3 +194,10 @@ ADS_RANK_BLEND_WEIGHTS = {
 
 # Visits Settings
 VISITS_ENABLED = True
+
+# Tours Settings
+TOURS_ENABLED = True
+TOURS_MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB for video tours
+TOURS_ALLOWED_PROVIDERS = [
+    'matterport', 'zillow', 'cupix', 'youtube', 'vimeo', 'custom'
+]

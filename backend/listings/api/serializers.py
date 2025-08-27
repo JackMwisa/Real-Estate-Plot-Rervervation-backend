@@ -123,6 +123,20 @@ class ListingSerializer(serializers.ModelSerializer):
                 'verified_at': None
             }
 
+    def get_tours_summary(self, obj):
+        """Get tours summary for the listing"""
+        from tours.models import TourAsset
+        
+        tours = TourAsset.objects.filter(listing=obj, is_active=True)
+        
+        return {
+            'total_tours': tours.count(),
+            'has_3d_tours': tours.filter(kind='3d').exists(),
+            'has_video_tours': tours.filter(kind='video').exists(),
+            'has_360_photos': tours.filter(kind='360').exists(),
+            'has_vr': tours.filter(kind='vr').exists(),
+        }
+
     class Meta:
         model = Listing
         fields = "__all__"
