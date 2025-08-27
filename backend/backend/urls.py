@@ -19,8 +19,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from . import views
 
 urlpatterns = [
+    # Root API endpoint
+    path("", views.api_root, name="api-root"),
+    path("api/", views.api_root, name="api-root-alt"),
+    path("health/", views.health_check, name="health-check"),
+    
     # Admin
     path("admin/", admin.site.urls),
     
