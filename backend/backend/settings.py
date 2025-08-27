@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "payments",
     "notifications",
     "search",
+    "verification",
 ]
 
 MIDDLEWARE = [
@@ -168,3 +169,15 @@ SEARCH_RANK_WEIGHTS = {
     'media_richness': 0.1,
     'distance': 0.4
 }
+
+# Verification Settings
+VERIFICATION_ENABLED = True
+VERIFICATION_MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+VERIFICATION_ALLOWED_FILE_TYPES = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+]
