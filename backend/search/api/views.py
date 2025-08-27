@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions, status
+from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -8,61 +9,63 @@ from ..services import SearchService, SavedSearchService
 from .serializers import SavedSearchSerializer
 
 
-class SearchView(generics.GenericAPIView):
+class SearchView(APIView):
     """
     GET /api/search/
-    Main search endpoint with filtering, sorting, and pagination
+    Main search endpoint with filtering, sorting, and pagination.
+    Uses APIView so DRF never requires a queryset.
     """
-    
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         search_service = SearchService()
         params = dict(request.query_params)
-        
-        # Convert single-item lists to strings for query params
+
+        # Normalize single-item lists from query_params to plain strings
         for key, value in params.items():
             if isinstance(value, list) and len(value) == 1:
                 params[key] = value[0]
-        
+
         results = search_service.search(params, user=request.user)
         return Response(results)
 
 
-class SearchFacetsView(generics.GenericAPIView):
+class SearchFacetsView(APIView):
     """
     GET /api/search/facets/
-    Get facet counts for current filter set
+    Get facet counts for the current filter set.
     """
-    
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         search_service = SearchService()
         params = dict(request.query_params)
-        
-        # Convert single-item lists to strings
+
         for key, value in params.items():
             if isinstance(value, list) and len(value) == 1:
                 params[key] = value[0]
-        
+
         facets = search_service.get_facets(params)
         return Response(facets)
 
 
-class SearchSuggestView(generics.GenericAPIView):
+class SearchSuggestView(APIView):
     """
     GET /api/search/suggest/
-    Autosuggest endpoint for typeahead
+    Autosuggest endpoint for typeahead.
     """
-    
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         query = request.query_params.get('q', '').strip()
         kind = request.query_params.get('kind', 'locations')
         limit = min(int(request.query_params.get('limit', 10)), 20)
-        
+
         if not query:
             return Response({'suggestions': []})
-        
+
         search_service = SearchService()
         suggestions = search_service.get_suggestions(query, kind, limit)
-        
         return Response({'suggestions': suggestions})
 
 
@@ -73,21 +76,21 @@ class SavedSearchListCreateView(generics.ListCreateAPIView):
     """
     serializer_class = SavedSearchSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return SavedSearch.objects.filter(user=self.request.user)
-    
+
     def perform_create(self, serializer):
         # Get query params from request data
         query_params = self.request.data.get('query_params', {})
         name = self.request.data.get('name', 'Untitled Search')
-        
+
         saved_search = SavedSearchService.create_saved_search(
             user=self.request.user,
             name=name,
             query_params=query_params
         )
-        
+
         # Return the created object data
         serializer.instance = saved_search
 
@@ -98,7 +101,7 @@ class SavedSearchDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     serializer_class = SavedSearchSerializer
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get_queryset(self):
         return SavedSearch.objects.filter(user=self.request.user)
 
@@ -110,15 +113,9 @@ def enable_alerts(request, pk):
     POST /api/search/saved/{id}/alerts/enable
     Enable alerts for a saved search
     """
-    saved_search = get_object_or_404(
-        SavedSearch, 
-        pk=pk, 
-        user=request.user
-    )
-    
+    saved_search = get_object_or_404(SavedSearch, pk=pk, user=request.user)
     saved_search.alerts_enabled = True
     saved_search.save(update_fields=['alerts_enabled'])
-    
     return Response({'status': 'enabled'})
 
 
@@ -129,15 +126,9 @@ def disable_alerts(request, pk):
     POST /api/search/saved/{id}/alerts/disable
     Disable alerts for a saved search
     """
-    saved_search = get_object_or_404(
-        SavedSearch, 
-        pk=pk, 
-        user=request.user
-    )
-    
+    saved_search = get_object_or_404(SavedSearch, pk=pk, user=request.user)
     saved_search.alerts_enabled = False
     saved_search.save(update_fields=['alerts_enabled'])
-    
     return Response({'status': 'disabled'})
 
 
@@ -148,11 +139,6 @@ def run_saved_search(request, pk):
     POST /api/search/saved/{id}/run
     Execute a saved search and return current results
     """
-    saved_search = get_object_or_404(
-        SavedSearch, 
-        pk=pk, 
-        user=request.user
-    )
-    
+    saved_search = get_object_or_404(SavedSearch, pk=pk, user=request.user)
     results = SavedSearchService.run_saved_search(saved_search)
     return Response(results)
