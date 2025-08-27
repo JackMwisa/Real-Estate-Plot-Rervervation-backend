@@ -44,12 +44,15 @@ urlpatterns = [
     path('api/search/', include('search.api.urls')),
     path('api/verification/', include('verification.api.urls')),
     path('api/ads/', include('ads.api.urls')),
+    path('api/visits/', include('visits.api.urls')),
     path('api/listings/<int:listing_id>/verify/', 
          include([
              path('', 'verification.api.views.ListingVerifyView.as_view(), name='listing-verify'),
          ])),
     path('api/listings/<int:listing_id>/verification-status/', 
          'verification.api.views.listing_verification_status', name='listing-verification-status'),
+    path('api/listings/<int:listing_id>/available-slots/', 
+         'visits.api.views.available_slots_for_listing', name='listing-available-slots'),
 
 
 

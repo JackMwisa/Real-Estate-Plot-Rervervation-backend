@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "search",
     "verification",
     "ads",
+    "visits",
 ]
 
 MIDDLEWARE = [
@@ -189,3 +190,6 @@ ADS_RANK_BLEND_WEIGHTS = {
     'organic_score': 0.7,
     'boost_score': 0.3
 }
+
+# Visits Settings
+VISITS_ENABLED = True
