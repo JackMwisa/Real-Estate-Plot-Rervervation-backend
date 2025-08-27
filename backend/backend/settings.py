@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "users",
     "payments",
     "notifications",
+    "search",
 ]
 
 MIDDLEWARE = [
@@ -154,3 +155,16 @@ try:
     from .server_settings import *  # noqa
 except ImportError:
     pass
+
+# Search & Discovery Settings
+SEARCH_ENABLED = True
+SEARCH_OPENSEARCH_ENABLED = False
+SEARCH_MAX_PAGE_SIZE = 50
+SEARCH_DEFAULT_SORT = 'relevance'
+SEARCH_RANK_WEIGHTS = {
+    'text_relevance': 1.0,
+    'freshness': 0.3,
+    'verified': 0.2,
+    'media_richness': 0.1,
+    'distance': 0.4
+}
