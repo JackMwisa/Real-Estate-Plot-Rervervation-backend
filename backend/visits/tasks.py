@@ -1,128 +1,252 @@
-from celery import shared_task
+from rest_framework import serializers
+from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.db.models import Q
-from datetime import timedelta
+from ..models import VisitSlot, Visit, VisitReminderTask, DirectBookingInquiry
 
-from .models import Visit, VisitReminderTask
-from notifications.services import notify
+User = get_user_model()
 
 
-@shared_task
-def process_visit_reminders():
-    """
-    Process pending visit reminder notifications
-    Run this task every 15 minutes
-    """
-    now = timezone.now()
+class VisitSlotSerializer(serializers.ModelSerializer):
+    agent_username = serializers.CharField(source='agent.username', read_only=True)
+    listing_title = serializers.CharField(source='listing.title', read_only=True)
+    available_capacity = serializers.ReadOnlyField()
+    is_full = serializers.ReadOnlyField()
+    is_past = serializers.ReadOnlyField()
     
-    # Get pending reminders that should be sent
-    pending_reminders = VisitReminderTask.objects.filter(
-        is_sent=False,
-        scheduled_at__lte=now
-    ).select_related('visit', 'visit__buyer', 'visit__listing', 'visit__slot')
-    
-    sent_count = 0
-    
-    for reminder in pending_reminders:
-        visit = reminder.visit
+    class Meta:
+        model = VisitSlot
+        fields = [
+            'tour_type', 'virtual_tour_url', 'meeting_location',
+            'start_at', 'end_at', 'capacity', 'available_capacity', 'is_full',
+            'fee_amount', 'currency', 'is_active', 'notes', 'is_past',
+            'supports_virtual', 'supports_onsite', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'agent', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        if data.get('start_at') and data.get('end_at'):
+            if data['start_at'] >= data['end_at']:
+                raise serializers.ValidationError("End time must be after start time")
+            
+            if data['start_at'] <= timezone.now():
+                raise serializers.ValidationError("Start time must be in the future")
         
-        # Skip if visit is cancelled or completed
-        if visit.status in ['cancelled', 'completed', 'no_show']:
-            reminder.is_sent = True
-            reminder.sent_at = now
-            reminder.save()
-            continue
+        # Validate virtual tour URL for virtual/hybrid tours
+        tour_type = data.get('tour_type')
+        virtual_tour_url = data.get('virtual_tour_url')
         
-        # Send appropriate reminder notification
-        if reminder.reminder_type == '24h_before':
-            message = f"Reminder: You have a visit to {visit.listing.title} tomorrow at {visit.slot.start_at.strftime('%H:%M')}"
-        elif reminder.reminder_type == '2h_before':
-            message = f"Reminder: Your visit to {visit.listing.title} starts in 2 hours. Check-in code: {visit.checkin_code}"
-        elif reminder.reminder_type == 'checkin_available':
-            message = f"Check-in is now available for your visit to {visit.listing.title}. Use code: {visit.checkin_code}"
-        else:
-            continue
+        if tour_type in ['virtual', 'hybrid'] and not virtual_tour_url:
+            raise serializers.ValidationError("Virtual tour URL is required for virtual/hybrid tours")
         
-        # Send notification
-        notify(
-            user=visit.buyer,
-            verb="visit_reminder",
-            message=message,
-            url=f"/visits/{visit.id}",
-            metadata={
-                "visit_id": str(visit.id),
-                "reminder_type": reminder.reminder_type,
-                "checkin_code": visit.checkin_code if visit.checkin_code else None
-            }
-        )
-        
-        # Mark as sent
-        reminder.is_sent = True
-        reminder.sent_at = now
-        reminder.save()
-        sent_count += 1
-    
-    return {
-        'processed_reminders': sent_count,
-        'processed_at': str(now)
-    }
+        return data
+
+    def create(self, validated_data):
+        # Set agent to current user
+        validated_data['agent'] = self.context['request'].user
+        return super().create(validated_data)
 
 
-@shared_task
-def mark_overdue_visits():
-    """
-    Mark confirmed visits as no-show if they're past due
-    Run this task every hour
-    """
-    now = timezone.now()
-    cutoff_time = now - timedelta(hours=1)  # 1 hour grace period
+class DirectBookingInquirySerializer(serializers.ModelSerializer):
+    visit_details = serializers.SerializerMethodField()
+    listing_title = serializers.CharField(source='visit.listing.title', read_only=True)
+    buyer_username = serializers.CharField(source='visit.buyer.username', read_only=True)
+    is_expired = serializers.ReadOnlyField()
     
-    # Find confirmed visits that are past their slot end time
-    overdue_visits = Visit.objects.filter(
-        status='confirmed',
-        slot__end_at__lt=cutoff_time
-    )
+    class Meta:
+        model = DirectBookingInquiry
+        fields = [
+            'id', 'visit', 'visit_details', 'listing_title', 'buyer_username',
+            'status', 'offered_amount', 'currency', 'proposed_terms',
+            'buyer_message', 'agent_response', 'is_expired',
+            'created_at', 'updated_at', 'responded_at', 'expires_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
     
-    updated_count = 0
-    for visit in overdue_visits:
-        visit.status = 'no_show'
-        visit.save()
+    def get_visit_details(self, obj):
+        return {
+            'id': str(obj.visit.id),
+            'booking_intent': obj.visit.booking_intent,
+            'budget_range': obj.visit.budget_range,
+            'move_in_date': obj.visit.move_in_date,
+            'selected_tour_type': obj.visit.selected_tour_type
+        }
+class VisitSerializer(serializers.ModelSerializer):
+    buyer_username = serializers.CharField(source='buyer.username', read_only=True)
+    listing_title = serializers.CharField(source='listing.title', read_only=True)
+    agent_username = serializers.CharField(source='slot.agent.username', read_only=True)
+    slot_time = serializers.SerializerMethodField()
+    can_checkin = serializers.ReadOnlyField()
+    can_access_virtual_tour = serializers.ReadOnlyField()
+    is_past_due = serializers.ReadOnlyField()
+    booking_inquiry = DirectBookingInquirySerializer(read_only=True)
+    
+    class Meta:
+        model = Visit
+        fields = [
+            'id', 'listing', 'listing_title', 'buyer', 'buyer_username',
+            'slot', 'slot_time', 'agent_username', 'status', 
+            'selected_tour_type', 'booking_intent', 'budget_range', 'move_in_date',
+            'visitor_count', 'special_requests', 'fee_amount', 'currency', 'fee_paid',
+            'payment_reference', 'checkin_code', 'checkin_at', 'checkin_location',
+            'virtual_tour_accessed_at', 'virtual_tour_duration',
+            'proof_photo', 'buyer_rating', 'buyer_feedback', 'agent_notes',
+            'can_checkin', 'can_access_virtual_tour', 'is_past_due', 
+            'booking_inquiry', 'created_at', 'updated_at', 'confirmed_at', 'completed_at'
+        ]
+        read_only_fields = [
+            'id', 'buyer', 'checkin_code', 'checkin_at', 'created_at',
+            'updated_at', 'confirmed_at', 'completed_at', 'virtual_tour_accessed_at'
+        ]
+
+    def get_slot_time(self, obj):
+        return {
+            'start_at': obj.slot.start_at,
+            'end_at': obj.slot.end_at
+        }
+
+    def validate_slot(self, value):
+        # Check if slot has available capacity
+        if value.available_capacity < 1:
+            raise serializers.ValidationError("This time slot is fully booked")
         
-        # Notify agent
-        notify(
-            user=visit.slot.agent,
-            verb="visit",
-            message=f"Visit by {visit.buyer.username} to {visit.listing.title} marked as no-show",
-            url=f"/visits/{visit.id}",
-            metadata={
-                "visit_id": str(visit.id),
-                "status": "no_show"
-            }
-        )
+        # Check if slot is in the future
+        if value.start_at <= timezone.now():
+            raise serializers.ValidationError("Cannot book visits for past time slots")
         
-        updated_count += 1
+        return value
     
-    return {
-        'marked_no_show': updated_count,
-        'processed_at': str(now)
-    }
+    def validate(self, data):
+        # Validate tour type compatibility with slot
+        slot = data.get('slot')
+        selected_tour_type = data.get('selected_tour_type', 'onsite')
+        
+        if slot:
+            if selected_tour_type == 'virtual' and not slot.supports_virtual:
+                raise serializers.ValidationError("This slot does not support virtual tours")
+            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
+                raise serializers.ValidationError("This slot does not support onsite tours")
+        
+        return data
+
+    def validate_visitor_count(self, value):
+        if hasattr(self, 'initial_data') and 'slot' in self.initial_data:
+            try:
+                slot = VisitSlot.objects.get(id=self.initial_data['slot'])
+                if value > slot.available_capacity:
+                    raise serializers.ValidationError(
+                        f"Visitor count exceeds available capacity ({slot.available_capacity})"
+                    )
+            except VisitSlot.DoesNotExist:
+                pass
+        
+        return value
+
+    def create(self, validated_data):
+        # Set buyer to current user
+        validated_data['buyer'] = self.context['request'].user
+        
+        # Set fee amount from slot if applicable
+        slot = validated_data['slot']
+        if slot.fee_amount:
+            validated_data['fee_amount'] = slot.fee_amount
+            validated_data['currency'] = slot.currency
+        
+        return super().create(validated_data)
 
 
-@shared_task
-def cleanup_old_visit_data():
-    """
-    Clean up old visit data to manage database size
-    Run this task weekly
-    """
-    # Delete old reminder tasks (older than 30 days)
-    cutoff_date = timezone.now() - timedelta(days=30)
+class VisitCreateSerializer(serializers.ModelSerializer):
+    """Simplified serializer for creating visits"""
     
-    deleted_reminders = VisitReminderTask.objects.filter(
-        created_at__lt=cutoff_date,
-        is_sent=True
-    ).delete()
+    class Meta:
+        model = Visit
+        fields = [
+            'slot', 'selected_tour_type', 'booking_intent', 'budget_range', 
+            'move_in_date', 'visitor_count', 'special_requests'
+        ]
+
+    def validate_slot(self, value):
+        # Check if user already has a visit for this slot
+        user = self.context['request'].user
+        if Visit.objects.filter(buyer=user, slot=value).exists():
+            raise serializers.ValidationError("You already have a visit booked for this slot")
+        
+        # Check slot availability
+        if value.available_capacity < 1:
+            raise serializers.ValidationError("This time slot is fully booked")
+        
+        if value.start_at <= timezone.now():
+            raise serializers.ValidationError("Cannot book visits for past time slots")
+        
+        return value
     
-    return {
-        'deleted_reminders': deleted_reminders[0] if deleted_reminders else 0,
-        'cutoff_date': str(cutoff_date)
-    }
+    def validate(self, data):
+        # Validate tour type compatibility
+        slot = data.get('slot')
+        selected_tour_type = data.get('selected_tour_type', 'onsite')
+        
+        if slot:
+            if selected_tour_type == 'virtual' and not slot.supports_virtual:
+                raise serializers.ValidationError("This slot does not support virtual tours")
+            elif selected_tour_type == 'onsite' and not slot.supports_onsite:
+                raise serializers.ValidationError("This slot does not support onsite tours")
+        
+        return data
+
+
+class VisitCheckinSerializer(serializers.Serializer):
+    """Serializer for visit check-in"""
+    
+    checkin_code = serializers.CharField(max_length=8)
+    location = serializers.JSONField(required=False)
+    proof_photo = serializers.ImageField(required=False)
+
+    def validate_checkin_code(self, value):
+        visit = self.context['visit']
+        if visit.checkin_code != value.upper():
+            raise serializers.ValidationError("Invalid check-in code")
+        return value.upper()
+
+
+class VirtualTourAccessSerializer(serializers.Serializer):
+    """Serializer for virtual tour access"""
+    
+    duration_seconds = serializers.IntegerField(required=False, min_value=1)
+class VisitFeedbackSerializer(serializers.Serializer):
+    """Serializer for visit feedback"""
+    
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    feedback = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+
+
+class DirectBookingInquiryCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating booking inquiries"""
+    
+    class Meta:
+        model = DirectBookingInquiry
+        fields = [
+            'offered_amount', 'currency', 'proposed_terms', 'buyer_message', 'expires_at'
+        ]
+    
+    def validate_offered_amount(self, value):
+        if value and value <= 0:
+            raise serializers.ValidationError("Offered amount must be positive")
+        return value
+class VisitReminderTaskSerializer(serializers.ModelSerializer):
+    visit_details = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = VisitReminderTask
+        fields = [
+            'id', 'visit', 'visit_details', 'reminder_type', 'scheduled_at',
+            'sent_at', 'is_sent', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+    def get_visit_details(self, obj):
+        return {
+            'id': str(obj.visit.id),
+            'listing_title': obj.visit.listing.title,
+            'buyer_username': obj.visit.buyer.username,
+            'slot_time': obj.visit.slot.start_at,
+            'tour_type': obj.visit.selected_tour_type
+        }
