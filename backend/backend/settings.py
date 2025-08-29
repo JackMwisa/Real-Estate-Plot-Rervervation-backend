@@ -10,37 +10,26 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+"""
+Django settings for backend project.
+"""
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Load environment variables
 load_dotenv()
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-your-secret-key-here"
-
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+# Your app runs on localhost in dev
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
- 
-CORS_ALLOW_CREDENTIALS = True
- 
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
-CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
-
-# Application definition
-
+# -----------------------------------------------------------------------------
+# Applications
+# -----------------------------------------------------------------------------
 INSTALLED_APPS = [
     "jazzmin",
     "django.contrib.admin",
@@ -49,14 +38,15 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    
-    # Third party apps
+
+    # Third-party
     "rest_framework",
     "rest_framework.authtoken",
     "djoser",
-    "corsheaders",
+    "corsheaders",                 # <-- required for CORS
+
     "django_filters",
-    
+
     # Local apps
     "users",
     "listings",
@@ -71,8 +61,11 @@ INSTALLED_APPS = [
     "verification",
 ]
 
+# -----------------------------------------------------------------------------
+# Middleware (CORS middleware should be at the very top)
+# -----------------------------------------------------------------------------
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",   # <-- keep first
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -102,10 +95,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
+# -----------------------------------------------------------------------------
+# Database (dev)
+# -----------------------------------------------------------------------------
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -113,57 +105,39 @@ DATABASES = {
     }
 }
 
-
+# -----------------------------------------------------------------------------
 # Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
+# -----------------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
+# -----------------------------------------------------------------------------
+# i18n / tz
+# -----------------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
-
 TIME_ZONE = "Africa/Kampala"
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
+# -----------------------------------------------------------------------------
+# Static & Media
+# -----------------------------------------------------------------------------
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# Custom User Model
 AUTH_USER_MODEL = "users.User"
 
-# REST Framework Configuration
+# -----------------------------------------------------------------------------
+# DRF
+# -----------------------------------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
@@ -180,7 +154,9 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Djoser Configuration
+# -----------------------------------------------------------------------------
+# Djoser
+# -----------------------------------------------------------------------------
 DJOSER = {
     "SERIALIZERS": {
         "user_create": "djoser.serializers.UserCreateSerializer",
@@ -190,15 +166,31 @@ DJOSER = {
     "SEND_CONFIRMATION_EMAIL": False,
 }
 
-# CORS Configuration
+# -----------------------------------------------------------------------------
+# CORS (single, correct section)
+# -----------------------------------------------------------------------------
+# If you need cookies/session across origins, keep credentials True and list
+# explicit origins (cannot use '*').
+CORS_ALLOW_CREDENTIALS = True
+
 CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",        # Vite dev server
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",        # (optional) CRA
+    "http://127.0.0.1:3000",
+]
+
+# For CSRF-protected POST/PUT from these origins (Django 5 requires scheme)
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
 
-CORS_ALLOW_CREDENTIALS = True
-
-# Email Configuration
+# -----------------------------------------------------------------------------
+# Email (dev placeholders)
+# -----------------------------------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
@@ -206,96 +198,60 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 
-# Payment Gateway Configuration
-# Flutterwave
+# -----------------------------------------------------------------------------
+# Payments & feature flags (unchanged)
+# -----------------------------------------------------------------------------
 FLUTTERWAVE_PUBLIC_KEY = os.getenv("FLUTTERWAVE_PUBLIC_KEY", "")
 FLUTTERWAVE_SECRET_KEY = os.getenv("FLUTTERWAVE_SECRET_KEY", "")
 FLUTTERWAVE_ENCRYPTION_KEY = os.getenv("FLUTTERWAVE_ENCRYPTION_KEY", "")
 
-# PayPal
 PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "")
 PAYPAL_SECRET_KEY = os.getenv("PAYPAL_SECRET_KEY", "")
 PAYPAL_ENVIRONMENT = os.getenv("PAYPAL_ENVIRONMENT", "sandbox")
 
-# Base URL for redirects
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
-# Feature Flags
 BOOKINGS_ENABLED = os.getenv("BOOKINGS_ENABLED", "true").lower() == "true"
 WALLET_ENABLED = os.getenv("WALLET_ENABLED", "true").lower() == "true"
 ADS_ENABLED = os.getenv("ADS_ENABLED", "true").lower() == "true"
 TOURS_ENABLED = os.getenv("TOURS_ENABLED", "true").lower() == "true"
 VERIFICATION_ENABLED = os.getenv("VERIFICATION_ENABLED", "true").lower() == "true"
 
-# Search Configuration
 SEARCH_MAX_PAGE_SIZE = 50
 SEARCH_DEFAULT_SORT = "relevance"
-SEARCH_RANK_WEIGHTS = {
-    "text_relevance": 1.0,
-    "freshness": 0.3,
-    "verified": 0.2,
-    "media_richness": 0.1,
-    "distance": 0.4
-}
+SEARCH_RANK_WEIGHTS = {"text_relevance": 1.0, "freshness": 0.3, "verified": 0.2, "media_richness": 0.1, "distance": 0.4}
+ADS_RANK_BLEND_WEIGHTS = {"organic_score": 0.7, "boost_score": 0.3}
 
-# Ads Configuration
-ADS_RANK_BLEND_WEIGHTS = {
-    "organic_score": 0.7,
-    "boost_score": 0.3
-}
-
-# Wallet Configuration
 WALLET_LARGE_TRANSACTION_THRESHOLD = 1000.00
 PAYOUT_APPROVAL_THRESHOLD = 500.00
 
-# File Upload Configuration
-FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
-# Security Configuration
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
 
-# Session Configuration
-SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_COOKIE_AGE = 86400
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Logging Configuration
+# -----------------------------------------------------------------------------
+# Logging & Jazzmin (unchanged)
+# -----------------------------------------------------------------------------
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'django.log',
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-        },
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "file": {"level": "INFO", "class": "logging.FileHandler", "filename": BASE_DIR / "django.log"},
+        "console": {"level": "INFO", "class": "logging.StreamHandler"},
     },
-    'loggers': {
-        'django': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'wallet': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
-        'bookings': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
+    "loggers": {
+        "django": {"handlers": ["file", "console"], "level": "INFO", "propagate": True},
+        "wallet": {"handlers": ["file", "console"], "level": "INFO", "propagate": True},
+        "bookings": {"handlers": ["file", "console"], "level": "INFO", "propagate": True},
     },
 }
 
-# Jazzmin Configuration
 JAZZMIN_SETTINGS = {
     "site_title": "Real Estate Platform",
     "site_header": "Real Estate Admin",
@@ -309,60 +265,28 @@ JAZZMIN_SETTINGS = {
     "copyright": "Real Estate Platform Ltd",
     "search_model": ["auth.User", "listings.Listing"],
     "user_avatar": None,
-    
-    # Top Menu
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "API Docs", "url": "/api/", "new_window": True},
         {"model": "auth.User"},
         {"app": "listings"},
     ],
-    
-    # User Menu
     "usermenu_links": [
         {"name": "Support", "url": "https://github.com/your-repo/issues", "new_window": True},
-        {"model": "auth.user"}
+        {"model": "auth.user"},
     ],
-    
-    # Side Menu
     "show_sidebar": True,
     "navigation_expanded": True,
-    "hide_apps": [],
-    "hide_models": [],
-    
-    # Menu ordering
     "order_with_respect_to": [
-        "auth", 
-        "users", 
-        "listings", 
-        "visits", 
-        "bookings", 
-        "payments", 
-        "wallet", 
-        "ads", 
-        "tours", 
-        "verification", 
-        "notifications", 
-        "search"
+        "auth", "users", "listings", "visits", "bookings", "payments", "wallet",
+        "ads", "tours", "verification", "notifications", "search"
     ],
-    
-    # Custom links
     "custom_links": {
-        "listings": [{
-            "name": "View Listings", 
-            "url": "/api/listings/", 
-            "icon": "fas fa-home",
-            "permissions": ["listings.view_listing"]
-        }],
-        "wallet": [{
-            "name": "Wallet Analytics", 
-            "url": "/api/wallet/analytics/", 
-            "icon": "fas fa-chart-line",
-            "permissions": ["wallet.view_wallet"]
-        }],
+        "listings": [{"name": "View Listings", "url": "/api/listings/", "icon": "fas fa-home",
+                      "permissions": ["listings.view_listing"]}],
+        "wallet": [{"name": "Wallet Analytics", "url": "/api/wallet/analytics/", "icon": "fas fa-chart-line",
+                    "permissions": ["wallet.view_wallet"]}],
     },
-    
-    # Icons
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
@@ -386,29 +310,14 @@ JAZZMIN_SETTINGS = {
         "notifications.Notification": "fas fa-bell",
         "search.SavedSearch": "fas fa-search",
     },
-    
-    # Default icon parents
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
-    
-    # Related modal
     "related_modal_active": False,
-    
-    # Custom CSS/JS
     "custom_css": None,
     "custom_js": None,
-    
-    # Show/hide elements
     "show_ui_builder": False,
-    
-    # Change form templates
     "changeform_format": "horizontal_tabs",
-    "changeform_format_overrides": {
-        "auth.user": "collapsible", 
-        "auth.group": "vertical_tabs"
-    },
-    
-    # Language chooser
+    "changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
     "language_chooser": False,
 }
 
@@ -440,6 +349,6 @@ JAZZMIN_UI_TWEAKS = {
         "info": "btn-info",
         "warning": "btn-warning",
         "danger": "btn-danger",
-        "success": "btn-success"
-    }
+        "success": "btn-success",
+    },
 }
