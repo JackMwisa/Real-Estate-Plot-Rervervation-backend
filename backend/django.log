@@ -861,3 +861,304 @@ Bad Request: /api-auth-djoser/token/login/
 "GET /api/notifications/unread-count/ HTTP/1.1" 200 11
 "GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
 "GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"POST /api-auth-djoser/token/login/ HTTP/1.1" 200 57
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/profiles/ HTTP/1.1" 200 23275
+"GET /api/profiles/ HTTP/1.1" 200 23275
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"POST /api-auth-djoser/token/login/ HTTP/1.1" 200 57
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"OPTIONS /api/wallet/ HTTP/1.1" 200 0
+"OPTIONS /api/wallet/ HTTP/1.1" 200 0
+"OPTIONS /api/wallet/ledger/ HTTP/1.1" 200 0
+"OPTIONS /api/wallet/ledger/ HTTP/1.1" 200 0
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/wallet/ledger/ HTTP/1.1" 200 52
+"GET /api/wallet/ HTTP/1.1" 200 454
+"GET /api/wallet/ledger/ HTTP/1.1" 200 52
+"GET /api/wallet/ HTTP/1.1" 200 454
+"OPTIONS /api/verification/user-status/ HTTP/1.1" 200 0
+"OPTIONS /api/verification/agency-status/ HTTP/1.1" 200 0
+"OPTIONS /api/verification/agency-status/ HTTP/1.1" 200 0
+"OPTIONS /api/verification/user-status/ HTTP/1.1" 200 0
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/verification/agency-status/ HTTP/1.1" 200 152
+"GET /api/verification/user-status/ HTTP/1.1" 200 152
+"GET /api/verification/agency-status/ HTTP/1.1" 200 152
+"GET /api/verification/user-status/ HTTP/1.1" 200 152
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/verification/user-status/ HTTP/1.1" 200 152
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"OPTIONS /api/search/saved/ HTTP/1.1" 200 0
+"OPTIONS /api/search/saved/ HTTP/1.1" 200 0
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/search/saved/ HTTP/1.1" 200 52
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/search/saved/ HTTP/1.1" 200 52
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/wallet/ledger/ HTTP/1.1" 200 52
+"GET /api/wallet/ HTTP/1.1" 200 454
+"GET /api/wallet/ledger/ HTTP/1.1" 200 52
+"GET /api/wallet/ HTTP/1.1" 200 454
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"POST /api-auth-djoser/token/login/ HTTP/1.1" 200 57
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+- Broken pipe from ('127.0.0.1', 56768)
+- Broken pipe from ('127.0.0.1', 56762)
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+- Broken pipe from ('127.0.0.1', 52019)
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+- Broken pipe from ('127.0.0.1', 63417)
+- Broken pipe from ('127.0.0.1', 49848)
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+- Broken pipe from ('127.0.0.1', 55597)
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+- Broken pipe from ('127.0.0.1', 62683)
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
+- Broken pipe from ('127.0.0.1', 58759)
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/profiles/ HTTP/1.1" 200 23275
+"GET /api/profiles/ HTTP/1.1" 200 23275
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+- Broken pipe from ('127.0.0.1', 55457)
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/wallet/ledger/ HTTP/1.1" 200 52
+"GET /api/wallet/ HTTP/1.1" 200 454
+"GET /api/wallet/ledger/ HTTP/1.1" 200 52
+"GET /api/wallet/ HTTP/1.1" 200 454
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api/notifications/unread-count/ HTTP/1.1" 200 11
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api-auth-djoser/users/me/ HTTP/1.1" 200 67
+"GET /api/profiles/2/ HTTP/1.1" 200 536
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+- Broken pipe from ('127.0.0.1', 53204)
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
+"GET /api/listings/?page=1&ordering=-date_posted HTTP/1.1" 200 22068
+Not Found: /media/listing_images/2025/08/08/entebbe_cottage.jpg
+"GET /media/listing_images/2025/08/08/entebbe_cottage.jpg HTTP/1.1" 404 5333
+Not Found: /media/listing_images/2025/08/08/bwaise_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/mbuya_apartment.jpg
+Not Found: /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg
+Not Found: /media/listing_images/2025/08/08/kampala_shop.jpg
+Not Found: /media/listing_images/2025/08/08/lubowa_villa.jpg
+Not Found: /media/listing_images/2025/08/08/jinja_hotel.jpg
+"GET /media/listing_images/2025/08/08/bwaise_apartment.jpg HTTP/1.1" 404 5337
+"GET /media/listing_images/2025/08/08/mbuya_apartment.jpg HTTP/1.1" 404 5333
+"GET /media/listing_images/2025/08/08/kampala_shop.jpg HTTP/1.1" 404 5321
+"GET /media/listing_images/2025/08/08/bweyogerere_warehouse.jpg HTTP/1.1" 404 5357
+"GET /media/listing_images/2025/08/08/lubowa_villa.jpg HTTP/1.1" 404 5321
+- Broken pipe from ('127.0.0.1', 51409)
+Not Found: /media/listing_images/2025/08/08/kampala_penthouse.jpg
+"GET /media/listing_images/2025/08/08/jinja_hotel.jpg HTTP/1.1" 404 5317
+- Broken pipe from ('127.0.0.1', 58027)
+Not Found: /media/listing_images/2025/08/08/masaka_farm.jpg
+- Broken pipe from ('127.0.0.1', 65344)
+"GET /media/listing_images/2025/08/08/kampala_penthouse.jpg HTTP/1.1" 404 5341
+"GET /media/listing_images/2025/08/08/masaka_farm.jpg HTTP/1.1" 404 5317
